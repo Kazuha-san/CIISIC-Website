@@ -9,6 +9,8 @@ const PROTECTED_ROUTES: Record<string, string[]> = {
 };
 
 const AUTH_REQUIRED_PREFIXES = [
+  "/api/auth/me",
+  "/api/auth/change-password",
   "/api/challenges",
   "/api/proposals",
   "/api/messages",
@@ -16,12 +18,13 @@ const AUTH_REQUIRED_PREFIXES = [
   "/api/admin",
   "/api/users",
   "/api/institutions",
-  "/api/auth/me",
 ];
 
 const PUBLIC_API_PREFIXES = [
   "/api/health",
   "/api/auth/register",
+  "/api/auth/forgot-password",
+  "/api/auth/reset-password",
   "/api/auth/signin",
   "/api/auth/signout",
   "/api/auth/session",

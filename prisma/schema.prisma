@@ -1,6 +1,5 @@
 generator client {
-  provider        = "prisma-client-js"
-  previewFeatures = ["driverAdapters"]
+  provider = "prisma-client-js"
 }
 
 datasource db {
@@ -111,9 +110,10 @@ model User {
   institutionProfile InstitutionProfile?
 
   // Relations
-  sentMessages  Message[]      @relation("SentMessages")
-  auditLogs     AuditLog[]
-  notifications Notification[]
+  sentMessages        Message[]            @relation("SentMessages")
+  auditLogs           AuditLog[]
+  notifications       Notification[]
+  passwordResetTokens PasswordResetToken[]
 
   @@index([email])
   @@index([role])
@@ -270,4 +270,19 @@ model Notification {
   createdAt DateTime @default(now())
 
   @@index([userId, isRead])
+}
+
+// ─── PASSWORD RESET ───────────────────────────────────────────────────────────
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([token])
+  @@index([userId])
 }
