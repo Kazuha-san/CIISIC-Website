@@ -1,0 +1,9 @@
+Component,Service / Choice,Cost (INR),How it is configured
+Server & DB,Hostinger KVM 2 (or DigitalOcean Bangalore),₹450,"1 vCPU, 2 GB RAM, 50 GB NVMe SSD. Hosts both the Next.js backend (using PM2/Docker) and your PostgreSQL database."
+Domain,Namecheap / GoDaddy,₹118,Custom .in domain name.
+File Storage,Cloudflare R2 (Free Tier),₹0,"Keep utilizing R2's free 10 GB. If you exceed it, it is only ₹1.25 per GB."
+Emails,Resend (Free Tier) or Amazon SES,₹0,"Keep using Resend's free 3,000 emails/mo. If you scale, Amazon SES is extremely cheap (₹8 per 1,000 emails)."
+Cache & Limit,Local Redis (Self-hosted),₹0,Installed directly on your VPS.
+Error Log,local PM2 Logs,₹0,Direct server logging instead of paid Sentry.
+Tax (GST),Included in VPS/Domain bills,—,
+Total Monthly,,~₹568 / month,(Approx. $6.80 USD)
