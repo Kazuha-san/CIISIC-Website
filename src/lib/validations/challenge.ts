@@ -15,19 +15,22 @@ export const ChallengeCreateSchema = z.object({
     "SKILL_DEVELOPMENT",
     "STARTUP",
   ]),
-  deadline: z.string().datetime("Invalid deadline date"),
+  deadline: z.string().datetime("Invalid deadline date").refine((val) => {
+    return new Date(val) > new Date();
+  }, {
+    message: "Deadline must be a future date",
+  }),
   budgetRange: z.string().optional(),
   tags: z.array(z.string()).max(10).optional(),
   attachmentUrls: z.array(z.string().url()).optional(),
   organizationName: z.string().min(2, "Organization name must be at least 2 characters").max(100).optional(),
   duration: z.string().min(1, "Duration is required").max(50).optional(),
-  status: z.enum(["DRAFT", "OPEN", "UNDER_REVIEW", "CLOSED", "ARCHIVED"]).optional(),
+  status: z.enum(["DRAFT", "PENDING_APPROVAL", "OPEN", "REJECTED", "UNDER_REVIEW", "CLOSED", "ARCHIVED"]).optional(),
 });
-
 
 export const ChallengeUpdateSchema = ChallengeCreateSchema.partial().extend({
   status: z
-    .enum(["DRAFT", "OPEN", "UNDER_REVIEW", "CLOSED", "ARCHIVED"])
+    .enum(["DRAFT", "PENDING_APPROVAL", "OPEN", "REJECTED", "UNDER_REVIEW", "CLOSED", "ARCHIVED"])
     .optional(),
 });
 
@@ -35,7 +38,7 @@ export const ChallengeQuerySchema = z.object({
   page: z.coerce.number().min(1).default(1),
   limit: z.coerce.number().min(1).max(100).default(20),
   status: z
-    .enum(["DRAFT", "OPEN", "UNDER_REVIEW", "CLOSED", "ARCHIVED"])
+    .enum(["DRAFT", "PENDING_APPROVAL", "OPEN", "REJECTED", "UNDER_REVIEW", "CLOSED", "ARCHIVED"])
     .optional(),
   domain: z
     .enum([
@@ -48,6 +51,7 @@ export const ChallengeQuerySchema = z.object({
       "STARTUP",
     ])
     .optional(),
+  deadline: z.string().optional(),
   search: z.string().optional(),
   sortBy: z.enum(["createdAt", "deadline", "viewCount"]).default("createdAt"),
   sortOrder: z.enum(["asc", "desc"]).default("desc"),

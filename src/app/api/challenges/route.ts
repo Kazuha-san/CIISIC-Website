@@ -1,7 +1,10 @@
 import { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { ChallengeCreateSchema, ChallengeQuerySchema } from "@/lib/validations/challenge";
+import {
+  ChallengeCreateSchema,
+  ChallengeQuerySchema,
+} from "@/lib/validations/challenge";
 import { createAuditLog, getRequestMeta } from "@/lib/audit";
 import { serializeChallenge } from "@/lib/serializers";
 import {
@@ -18,7 +21,7 @@ import type { Prisma } from "@prisma/client";
 /**
  * GET /api/challenges
  * Public-ish: returns OPEN challenges to all; DRAFT/CLOSED visible only to relevant roles.
- * Query params: page, limit, status, domain, search, sortBy, sortOrder
+ * Query params: page, limit, status, domain, deadline, search, sortBy, sortOrder
  */
 export async function GET(req: NextRequest) {
   try {
@@ -27,36 +30,41 @@ export async function GET(req: NextRequest) {
     const userId = session?.user?.id;
 
     const { searchParams } = new URL(req.url);
-    const queryParsed = ChallengeQuerySchema.safeParse({
-      page: searchParams.get("page"),
-      limit: searchParams.get("limit"),
-      status: searchParams.get("status"),
-      domain: searchParams.get("domain"),
-      search: searchParams.get("search"),
-      sortBy: searchParams.get("sortBy"),
-      sortOrder: searchParams.get("sortOrder"),
-    });
+
+    // Only include query params that actually exist.
+    // Missing params remain undefined so Zod defaults/optional fields work correctly.
+    const queryParsed = ChallengeQuerySchema.safeParse(
+      Object.fromEntries(searchParams.entries())
+    );
 
     if (!queryParsed.success) {
       return validationError(queryParsed.error.flatten());
     }
 
-    const { page, limit, status, domain, search, sortBy, sortOrder } =
-      queryParsed.data;
+    const {
+      page,
+      limit,
+      status,
+      domain,
+      deadline,
+      search,
+      sortBy,
+      sortOrder,
+    } = queryParsed.data;
 
     const skip = (page - 1) * limit;
 
-    // Build where clause based on role
     const where: Prisma.ChallengeWhereInput = {};
 
     if (!role || role === "STUDENT") {
-      // Students and public can ONLY see OPEN challenges
+      // Students and public can only view OPEN challenges
       where.status = "OPEN";
     } else if (role === "INDUSTRY_SPOC" && userId) {
       const profile = await prisma.industryProfile.findUnique({
         where: { userId },
         select: { id: true },
       });
+
       const industryId = profile?.id ?? "none";
 
       if (status) {
@@ -73,7 +81,7 @@ export async function GET(req: NextRequest) {
         ];
       }
     } else {
-      // Admin sees everything
+      // Admin/CII Admin/Super Admin
       if (status) {
         where.status = status;
       }
@@ -83,11 +91,31 @@ export async function GET(req: NextRequest) {
       where.domain = domain;
     }
 
+    if (deadline) {
+      where.deadline = {
+        gte: new Date(deadline),
+      };
+    }
+
     if (search) {
       where.OR = [
-        { title: { contains: search, mode: "insensitive" } },
-        { problemStatement: { contains: search, mode: "insensitive" } },
-        { tags: { has: search } },
+        {
+          title: {
+            contains: search,
+            mode: "insensitive",
+          },
+        },
+        {
+          problemStatement: {
+            contains: search,
+            mode: "insensitive",
+          },
+        },
+        {
+          tags: {
+            has: search,
+          },
+        },
       ];
     }
 
@@ -97,7 +125,9 @@ export async function GET(req: NextRequest) {
         where,
         skip,
         take: limit,
-        orderBy: { [sortBy]: sortOrder },
+        orderBy: {
+          [sortBy]: sortOrder,
+        },
         include: {
           industryProfile: {
             select: {
@@ -109,13 +139,21 @@ export async function GET(req: NextRequest) {
               isCIIMember: true,
             },
           },
-          _count: { select: { proposals: true } },
+          _count: {
+            select: {
+              proposals: true,
+            },
+          },
         },
       }),
     ]);
 
-    const serialized = challenges.map((c) =>
-      serializeChallenge(c, (role as never) ?? "STUDENT", userId)
+    const serialized = challenges.map((challenge) =>
+      serializeChallenge(
+        challenge,
+        (role as never) ?? "STUDENT",
+        userId
+      )
     );
 
     return ok({
@@ -140,23 +178,35 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const session = await auth();
-    if (!session?.user?.id) return unauthorized();
+
+    if (!session?.user?.id) {
+      return unauthorized();
+    }
+
     if (session.user.role !== "INDUSTRY_SPOC") {
       return forbidden("Only Industry SPOCs can create challenges");
     }
 
     const body = await req.json();
+
     const parsed = ChallengeCreateSchema.safeParse(body);
-    if (!parsed.success) return validationError(parsed.error.flatten());
+
+    if (!parsed.success) {
+      return validationError(parsed.error.flatten());
+    }
 
     const data = parsed.data;
 
     const industryProfile = await prisma.industryProfile.findUnique({
-      where: { userId: session.user.id },
+      where: {
+        userId: session.user.id,
+      },
     });
 
     if (!industryProfile) {
-      return badRequest("Industry profile not found — please complete registration");
+      return badRequest(
+        "Industry profile not found — please complete registration"
+      );
     }
 
     const challenge = await prisma.challenge.create({
@@ -170,19 +220,24 @@ export async function POST(req: NextRequest) {
         tags: data.tags ?? [],
         attachmentUrls: data.attachmentUrls ?? [],
         industryProfileId: industryProfile.id,
-        status: data.status ?? "UNDER_REVIEW",
-        organizationName: data.organizationName ?? industryProfile.companyName,
+        status: data.status ?? "DRAFT",
+        organizationName:
+          data.organizationName ?? industryProfile.companyName,
         duration: data.duration ?? null,
       },
     });
 
     const { ipAddress, userAgent } = getRequestMeta(req);
+
     await createAuditLog({
       userId: session.user.id,
       action: "CHALLENGE_CREATED",
       entityType: "Challenge",
       entityId: challenge.id,
-      newValue: { title: challenge.title, domain: challenge.domain },
+      newValue: {
+        title: challenge.title,
+        domain: challenge.domain,
+      },
       ipAddress,
       userAgent,
     });

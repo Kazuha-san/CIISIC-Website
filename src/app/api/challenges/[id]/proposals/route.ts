@@ -188,7 +188,7 @@ export async function POST(
         return conflict(`You have already submitted a proposal for this challenge (current status: ${existing.status})`);
       }
 
-      let nextStatus = existing.status;
+      let nextStatus = existing.status as any;
       if (!isDraft) {
         if (existing.status === "DRAFT") {
           nextStatus = "SUBMITTED";
@@ -246,7 +246,7 @@ export async function POST(
       action: transitionAction,
       entityType: "Proposal",
       entityId: proposal.id,
-      oldValue: existing ? { status: existing.status } : null,
+      oldValue: existing ? { status: existing.status } : undefined,
       newValue: { challengeId: id, status: proposal.status },
       ipAddress,
       userAgent,

@@ -95,6 +95,21 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       return session;
     },
   },
+  events: {
+    async signIn(message) {
+      if (message?.user?.id) {
+        await prisma.auditLog.create({
+          data: {
+            userId: message.user.id,
+            action: "USER_LOGIN",
+            entityType: "User",
+            entityId: message.user.id,
+            newValue: { email: message.user.email },
+          },
+        }).catch(console.error);
+      }
+    }
+  },
   pages: {
     signIn: "/api/auth/signin",
     error: "/api/auth/error",

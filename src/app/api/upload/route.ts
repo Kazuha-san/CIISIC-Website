@@ -12,7 +12,7 @@ import { storageProvider } from "@/lib/storage";
 const MAX_LOGO_SIZE = 2 * 1024 * 1024; // 2MB
 const MAX_DOC_SIZE = 10 * 1024 * 1024; // 10MB
 
-const ALLOWED_LOGO_TYPES = ["image/jpeg", "image/png", "image/webp"];
+const ALLOWED_LOGO_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 const ALLOWED_DOC_TYPES = [
   "application/pdf",
   "application/msword",
@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
         return badRequest("Logo file size exceeds the 2MB limit");
       }
       if (!ALLOWED_LOGO_TYPES.includes(mimeType)) {
-        return badRequest("Invalid logo format. Allowed: JPEG, PNG, WebP");
+        return badRequest("Invalid logo format. Allowed: JPEG, JPG, PNG, WebP");
       }
     } else {
       if (size > MAX_DOC_SIZE) {
@@ -78,7 +78,7 @@ export async function POST(req: NextRequest) {
     const { ipAddress, userAgent } = getRequestMeta(req);
     await createAuditLog({
       userId: session.user.id,
-      action: "ADMIN_ACTION",
+      action: "FILE_UPLOADED",
       entityType: "File",
       entityId: secureName,
       newValue: {

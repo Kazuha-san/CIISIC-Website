@@ -131,9 +131,15 @@ export async function PATCH(
     });
 
     const { ipAddress, userAgent } = getRequestMeta(req);
+    const auditAction = data.status === "PENDING_APPROVAL"
+      ? "CHALLENGE_SUBMITTED"
+      : data.status
+      ? "CHALLENGE_STATUS_CHANGED"
+      : "CHALLENGE_UPDATED";
+
     await createAuditLog({
       userId: session.user.id,
-      action: data.status ? "CHALLENGE_STATUS_CHANGED" : "CHALLENGE_UPDATED",
+      action: auditAction,
       entityType: "Challenge",
       entityId: id,
       oldValue: { status: challenge.status },

@@ -19,6 +19,58 @@ const ReviewSchema = z.object({
 });
 
 /**
+ * GET /api/admin/challenges/[id]/review
+ * Return review details: reviewRemarks, reviewedAt, reviewerId, and reviewer info.
+ */
+export async function GET(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const session = await auth();
+    if (!session?.user?.id) return unauthorized();
+
+    const isAdmin =
+      session.user.role === "SUPER_ADMIN" ||
+      session.user.role === "CII_ADMIN";
+
+    const challenge = await prisma.challenge.findUnique({
+      where: { id },
+      include: {
+        industryProfile: true,
+        reviewer: {
+          select: { id: true, name: true, email: true },
+        },
+      },
+    });
+
+    if (!challenge) {
+      return notFound("Challenge not found");
+    }
+
+    const isOwner =
+      session.user.role === "INDUSTRY_SPOC" &&
+      challenge.industryProfile.userId === session.user.id;
+
+    if (!isAdmin && !isOwner) {
+      return forbidden("You do not have permission to view review details");
+    }
+
+    return ok({
+      reviewRemarks: challenge.reviewRemarks,
+      reviewedAt: challenge.reviewedAt,
+      reviewerId: challenge.reviewerId,
+      reviewer: challenge.reviewer,
+      status: challenge.status,
+    });
+  } catch (err) {
+    console.error("[GET /api/admin/challenges/[id]/review]", err);
+    return serverError();
+  }
+}
+
+/**
  * POST /api/admin/challenges/[id]/review
  * Admin review endpoint to approve or reject a challenge submission.
  */
@@ -59,7 +111,7 @@ export async function POST(
       return notFound("Challenge not found");
     }
 
-    const nextStatus = action === "APPROVE" ? "OPEN" : "DRAFT";
+    const nextStatus = action === "APPROVE" ? "OPEN" : "REJECTED";
 
     const updatedChallenge = await prisma.challenge.update({
       where: { id },
@@ -89,19 +141,20 @@ export async function POST(
     await prisma.notification.create({
       data: {
         userId: challenge.industryProfile.userId,
-        title: `Project ${action === "APPROVE" ? "Approved" : "Rejected"}`,
+        title: `Challenge ${action === "APPROVE" ? "Approved" : "Rejected"}`,
         body: remarks
           ? `Review Remarks: ${remarks}`
-          : `Your project "${challenge.title}" has been ${action === "APPROVE" ? "approved and is now visible" : "rejected and returned to drafts"}.`,
+          : `Your challenge "${challenge.title}" has been ${action === "APPROVE" ? "approved" : "rejected"}.`,
         link: `/api/challenges/${id}`,
       },
     });
 
     // Create Audit Log entry
     const { ipAddress, userAgent } = getRequestMeta(req);
+    const auditAction = action === "APPROVE" ? "CHALLENGE_APPROVED" : "CHALLENGE_REJECTED";
     await createAuditLog({
       userId: session.user.id,
-      action: "CHALLENGE_STATUS_CHANGED",
+      action: auditAction,
       entityType: "Challenge",
       entityId: id,
       oldValue: { status: challenge.status },

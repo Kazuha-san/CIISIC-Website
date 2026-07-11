@@ -30,7 +30,9 @@ enum CellTheme {
 
 enum ChallengeStatus {
   DRAFT
+  PENDING_APPROVAL
   OPEN
+  REJECTED
   UNDER_REVIEW
   CLOSED
   ARCHIVED
