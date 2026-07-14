@@ -90,7 +90,7 @@ async function main() {
   // ─── Super Admin ──────────────────────────────────────────────────────────
   const superAdmin = await prisma.user.upsert({
     where: { email: "superadmin@ciisic.in" },
-    update: {},
+    update: { passwordHash: await hash("Admin@1234") },
     create: {
       email: "superadmin@ciisic.in",
       name: "Super Admin",
@@ -105,7 +105,7 @@ async function main() {
   // ─── CII Admin ────────────────────────────────────────────────────────────
   const ciiAdmin = await prisma.user.upsert({
     where: { email: "admin@ciisic.in" },
-    update: {},
+    update: { passwordHash: await hash("Admin@1234") },
     create: {
       email: "admin@ciisic.in",
       name: "CII Admin",
@@ -120,7 +120,7 @@ async function main() {
   // ─── Institution SPOC ─────────────────────────────────────────────────────
   const spocUser = await prisma.user.upsert({
     where: { email: "spoc@jlu.edu.in" },
-    update: {},
+    update: { passwordHash: await hash("Spoc@1234") },
     create: {
       email: "spoc@jlu.edu.in",
       name: "Dr. Priya Sharma",
@@ -146,12 +146,12 @@ async function main() {
   // ─── Industry SPOC ────────────────────────────────────────────────────────
   const industryUser = await prisma.user.upsert({
     where: { email: "hr@techcorp.com" },
-    update: {},
+    update: { passwordHash: await hash("Industry@2026") },
     create: {
       email: "hr@techcorp.com",
       name: "Rahul Mehta",
       role: "INDUSTRY_SPOC",
-      passwordHash: await hash("Industry@1234"),
+      passwordHash: await hash("Industry@2026"),
       emailVerified: true,
       isActive: true,
     },
@@ -174,7 +174,7 @@ async function main() {
   // ─── Student ──────────────────────────────────────────────────────────────
   const studentUser = await prisma.user.upsert({
     where: { email: "student@jlu.edu.in" },
-    update: {},
+    update: { passwordHash: await hash("Student@1234") },
     create: {
       email: "student@jlu.edu.in",
       name: "Arjun Verma",
@@ -260,7 +260,7 @@ async function main() {
   console.log("Super Admin:       superadmin@ciisic.in   / Admin@1234");
   console.log("CII Admin:         admin@ciisic.in        / Admin@1234");
   console.log("Institution SPOC:  spoc@jlu.edu.in        / Spoc@1234");
-  console.log("Industry SPOC:     hr@techcorp.com        / Industry@1234");
+  console.log("Industry SPOC:     hr@techcorp.com        / Industry@2026");
   console.log("Student:           student@jlu.edu.in     / Student@1234");
   console.log("──────────────────────────────────────────────────────────────");
 }

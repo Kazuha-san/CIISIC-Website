@@ -13,7 +13,7 @@ export const IndustryLogin: React.FC = () => {
   const [error, setError] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
@@ -23,28 +23,19 @@ export const IndustryLogin: React.FC = () => {
     }
 
     setIsLoading(true);
+    const res = await login(email, password);
+    setIsLoading(false);
 
-    // Simulate small delay for premium enterprise feel
-    setTimeout(() => {
-      if (email.toLowerCase() === 'industry@ciisic.org' && password === 'Industry@2026') {
-        const res = login(email, 'industry');
-        setIsLoading(false);
-
-        if (res.success) {
-          showToast('Successfully logged in to Industry Partner Portal!', 'success');
-          navigate('/industry/dashboard');
-        } else {
-          setError('Authentication service error. Please try again.');
-        }
-      } else {
-        setIsLoading(false);
-        setError('Invalid email or password.');
-      }
-    }, 600);
+    if (res.success) {
+      showToast('Successfully logged in to Industry Partner Portal!', 'success');
+      navigate('/industry/dashboard');
+    } else {
+      setError(res.error || 'Invalid email or password.');
+    }
   };
 
   const handleQuickLogin = () => {
-    setEmail('industry@ciisic.org');
+    setEmail('hr@techcorp.com');
     setPassword('Industry@2026');
     setError('');
     showToast('Credentials autofilled! Please click Sign In.', 'info');
@@ -192,7 +183,7 @@ export const IndustryLogin: React.FC = () => {
               </div>
               <div className="bg-[#f0f5fa] p-4 rounded-2xl border border-blue-100/50 flex flex-col sm:flex-row justify-between items-center gap-4">
                 <div className="text-left text-xs space-y-1">
-                  <p className="text-slate-500 font-medium">Email: <strong className="font-bold text-[#002147]">industry@ciisic.org</strong></p>
+                  <p className="text-slate-500 font-medium">Email: <strong className="font-bold text-[#002147]">hr@techcorp.com</strong></p>
                   <p className="text-slate-500 font-medium">Password: <strong className="font-bold text-[#002147]">Industry@2026</strong></p>
                 </div>
                 <button

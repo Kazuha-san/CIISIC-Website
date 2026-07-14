@@ -37,6 +37,8 @@ export type SafeChallenge = {
     industry: string;
     logoUrl: string | null;
     isCIIMember: boolean;
+    email?: string;
+    representativeName?: string;
   };
   _count?: { proposals: number };
 };
@@ -126,6 +128,8 @@ export function serializeChallenge(
       industry: challenge.industryProfile?.industry ?? "",
       logoUrl: challenge.industryProfile?.logoUrl ?? null,
       isCIIMember: challenge.industryProfile?.isCIIMember ?? false,
+      email: challenge.industryProfile?.user?.email ?? "",
+      representativeName: challenge.industryProfile?.user?.name ?? "",
     },
     _count: challenge._count,
   };

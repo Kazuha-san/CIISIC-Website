@@ -14,7 +14,7 @@ export const AdminLogin: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
@@ -33,30 +33,20 @@ export const AdminLogin: React.FC = () => {
     }
 
     setIsLoading(true);
+    const res = await login(email, password);
+    setIsLoading(false);
 
-    // Simulate small verification delay for professional federal look
-    setTimeout(() => {
-      // Validate credentials strictly
-      if (email.toLowerCase() === 'admin@ciisic.org' && password === 'CIIAdmin@2026') {
-        const res = login(email, 'admin');
-        setIsLoading(false);
-
-        if (res.success) {
-          showToast('Successfully logged in as CII Administrator.', 'success');
-          navigate('/admin/dashboard');
-        } else {
-          setError('Authentication service error. Please try again.');
-        }
-      } else {
-        setIsLoading(false);
-        setError('Invalid email or password.');
-      }
-    }, 600);
+    if (res.success) {
+      showToast('Successfully logged in as CII Administrator.', 'success');
+      navigate('/admin/dashboard');
+    } else {
+      setError(res.error || 'Invalid email or password.');
+    }
   };
 
   const handleQuickLogin = () => {
-    setEmail('admin@ciisic.org');
-    setPassword('CIIAdmin@2026');
+    setEmail('admin@ciisic.in');
+    setPassword('Admin@1234');
     setError('');
   };
 
