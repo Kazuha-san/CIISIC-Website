@@ -1,8 +1,26 @@
+# Dependency directories
 node_modules/
-build/
+frontend/node_modules/
+
+# Build outputs
 dist/
+frontend/dist/
+build/
+frontend/build/
 coverage/
+frontend/coverage/
+
+# IDE and OS files
 .DS_Store
-*.log
+.vscode/
+.idea/
+
+# Environment variables
 .env*
 !.env.example
+frontend/.env*
+!frontend/.env.example
+
+# Logs
+*.log
+frontend/*.log
