@@ -71,7 +71,7 @@ export const IndustryDashboard: React.FC = () => {
 
   // Filter submissions to only display those belonging to this logged in industry partner
   const mySubmissions = submissions.filter(
-    (sub) => sub.company.email.toLowerCase() === currentUser?.email.toLowerCase()
+    (sub) => sub.company.email.toLowerCase() === currentUser?.email?.toLowerCase()
   );
 
   const stats = {
@@ -341,6 +341,9 @@ export const IndustryDashboard: React.FC = () => {
     setCurrentView('form');
     scrollToForm();
   };
+
+  console.log('currentUser:', currentUser);
+  console.log('submissions:', submissions);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">

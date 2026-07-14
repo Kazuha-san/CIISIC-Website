@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { ProblemStatement, User, SubmissionStatus } from '../types';
-import { MOCK_USERS, INITIAL_SUBMISSIONS } from '../data/mockData';
+import { login as apiLogin, logout as apiLogout, getSession, fetchChallenges, createChallenge, updateChallenge, reviewChallenge } from '../lib/api';
 
 export interface ToastType {
   message: string;
@@ -13,28 +13,55 @@ interface AppContextType {
   toast: ToastType | null;
   showToast: (message: string, type?: 'success' | 'error' | 'info') => void;
   hideToast: () => void;
-  login: (email: string, role: 'industry' | 'admin') => { success: boolean; error?: string };
-  logout: () => void;
-  addSubmission: (submission: Omit<ProblemStatement, 'id' | 'status' | 'submittedDate'>) => string;
-  updateSubmissionStatus: (id: string, status: SubmissionStatus, remarks?: string) => void;
-  updateSubmission: (submission: ProblemStatement) => void;
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  logout: () => Promise<void>;
+  addSubmission: (submission: Omit<ProblemStatement, 'id' | 'status' | 'submittedDate'>) => Promise<string>;
+  updateSubmissionStatus: (id: string, status: SubmissionStatus, remarks?: string) => Promise<void>;
+  updateSubmission: (submission: ProblemStatement) => Promise<void>;
   resetData: () => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
+const mapUserRole = (user: any): User => {
+  const roleMap: Record<string, 'industry' | 'admin'> = {
+    INDUSTRY_SPOC: 'industry',
+    SUPER_ADMIN: 'admin',
+    CII_ADMIN: 'admin',
+    INSTITUTION_SPOC: 'admin',
+  };
+  return {
+    ...user,
+    role: roleMap[user.role] || 'industry',
+  };
+};
+
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // Load initial user or check local storage
-  const [currentUser, setCurrentUser] = useState<User | null>(() => {
-    const saved = localStorage.getItem('ciisic_current_user');
-    return saved ? JSON.parse(saved) : null;
-  });
+  // Duplicate initial user load removed; state will be set after session fetch
 
-  // Load submissions or fall back to mock data
-  const [submissions, setSubmissions] = useState<ProblemStatement[]>(() => {
-    const saved = localStorage.getItem('ciisic_submissions');
-    return saved ? JSON.parse(saved) : INITIAL_SUBMISSIONS;
-  });
+  // Load submissions from backend or fallback to localStorage
+  const [submissions, setSubmissions] = useState<ProblemStatement[]>([]);
+
+  // Load current user session
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+
+  // Fetch session and challenges on mount
+  useEffect(() => {
+    (async () => {
+      const user = await getSession();
+      if (user) setCurrentUser(mapUserRole(user));
+      const challenges = await fetchChallenges();
+      setSubmissions(challenges);
+    })();
+  }, []);
+
+  // Sync submissions to localStorage (optional)
+  useEffect(() => {
+    if (submissions.length) {
+      localStorage.setItem('ciisic_submissions', JSON.stringify(submissions));
+    }
+  }, [submissions]);
 
   // Global toast notification state
   const [toast, setToast] = useState<ToastType | null>(null);
@@ -56,61 +83,31 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, [currentUser]);
 
-  useEffect(() => {
-    localStorage.setItem('ciisic_submissions', JSON.stringify(submissions));
-  }, [submissions]);
 
-  const login = (email: string, role: 'industry' | 'admin') => {
-    // Find the matching mock user
-    const foundUser = MOCK_USERS.find(
-      (u) => u.email.toLowerCase() === email.toLowerCase() && u.role === role
-    );
 
-    if (foundUser) {
-      setCurrentUser(foundUser);
+  const login = async (email: string, password: string) => {
+    try {
+      const user = await apiLogin(email, password);
+      setCurrentUser(mapUserRole(user));
       return { success: true };
+    } catch (e: any) {
+      return { success: false, error: e.message };
     }
-
-    // Dynamic generation if they input a new email to make it extremely flexible
-    if (email.includes('@')) {
-      const generatedUser: User = {
-        id: `user_${Date.now()}`,
-        name: email.split('@')[0].split('.').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' '),
-        email: email,
-        role: role,
-        companyName: role === 'industry' ? 'CII Industry Partner' : 'CII Directorate',
-        designation: role === 'industry' ? 'General Manager' : 'Officer'
-      };
-      setCurrentUser(generatedUser);
-      return { success: true };
-    }
-
-    return { success: false, error: 'Please enter a valid email address.' };
   };
 
-  const logout = () => {
+  const logout = async () => {
+    await apiLogout();
     setCurrentUser(null);
   };
 
-  const addSubmission = (submissionData: Omit<ProblemStatement, 'id' | 'status' | 'submittedDate'>) => {
-    const nextIdNum = submissions.reduce((max, sub) => {
-      const num = parseInt(sub.id.replace('PS-2026-', ''));
-      return isNaN(num) ? max : Math.max(max, num);
-    }, 3); // Start after our seeded ones
-
-    const newId = `PS-2026-0${nextIdNum + 1}`;
-    const newSubmission: ProblemStatement = {
-      ...submissionData,
-      id: newId,
-      status: 'Pending',
-      submittedDate: new Date().toISOString()
-    };
-
-    setSubmissions((prev) => [newSubmission, ...prev]);
-    return newId;
+  const addSubmission = async (submissionData: Omit<ProblemStatement, 'id' | 'status' | 'submittedDate'>) => {
+    const created = await createChallenge(submissionData);
+    setSubmissions((prev) => [created, ...prev]);
+    return created.id;
   };
 
-  const updateSubmissionStatus = (id: string, status: SubmissionStatus, remarks?: string) => {
+  const updateSubmissionStatus = async (id: string, status: SubmissionStatus, remarks?: string) => {
+    await reviewChallenge(id, status, remarks);
     setSubmissions((prev) =>
       prev.map((sub) =>
         sub.id === id ? { ...sub, status, reviewRemarks: remarks } : sub
@@ -118,15 +115,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     );
   };
 
-  const updateSubmission = (updated: ProblemStatement) => {
+  const updateSubmission = async (updated: ProblemStatement) => {
+    const saved = await updateChallenge(updated.id, updated);
     setSubmissions((prev) =>
-      prev.map((sub) => (sub.id === updated.id ? updated : sub))
+      prev.map((sub) => (sub.id === saved.id ? saved : sub))
     );
   };
 
   const resetData = () => {
     setCurrentUser(null);
-    setSubmissions(INITIAL_SUBMISSIONS);
+    setSubmissions([]);
     localStorage.removeItem('ciisic_current_user');
     localStorage.removeItem('ciisic_submissions');
   };
