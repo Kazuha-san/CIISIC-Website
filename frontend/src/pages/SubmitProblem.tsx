@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
 import { DifficultyLevel } from '../types';
+import { uploadFile } from '../lib/api';
 
 // Zod validation schema
 const formSchema = z.object({
@@ -123,56 +124,61 @@ export const SubmitProblem: React.FC = () => {
   };
 
   // Final submission processing
-  const onFormSubmit = (data: FormFields) => {
+  const onFormSubmit = async (data: FormFields) => {
     setIsSubmitting(true);
+    try {
+      let attachmentUrl: string | undefined = undefined;
 
-    setTimeout(() => {
-      try {
-        // Assemble data matching the state structure
-        addSubmission({
-          company: {
-            industryName: data.industryName,
-            companyName: data.companyName,
-            representativeName: data.representativeName,
-            designation: data.designation,
-            email: data.email,
-            phone: data.phone,
-            website: data.website,
-            industrySector: data.industrySector
-          },
-          details: {
-            title: data.title,
-            description: data.description,
-            businessChallenge: data.businessChallenge,
-            existingProcess: data.existingProcess,
-            expectedOutcome: data.expectedOutcome,
-            projectObjectives: data.projectObjectives
-          },
-          technical: {
-            requiredTechnologies: data.requiredTechnologiesStr.split(',').map((s) => s.trim()).filter(Boolean),
-            requiredSkills: data.requiredSkillsStr.split(',').map((s) => s.trim()).filter(Boolean),
-            preferredBranches: data.preferredBranchesStr.split(',').map((s) => s.trim()).filter(Boolean),
-            preferredAcademicYear: data.preferredAcademicYear,
-            difficultyLevel: data.difficultyLevel as DifficultyLevel,
-            expectedDuration: data.expectedDuration
-          },
-          additional: {
-            expectedDeliverables: data.expectedDeliverables,
-            additionalNotes: data.additionalNotes || '',
-            fileAttachmentName: uploadedFile ? uploadedFile.name : undefined,
-            declarationAccepted: data.declarationAccepted
-          }
-        });
-
-        setIsSubmitting(false);
-        setIsConfirming(false);
-        showToast('Problem Statement filed successfully! Status is Pending Approval.', 'success');
-        navigate('/industry/dashboard');
-      } catch (err) {
-        setIsSubmitting(false);
-        showToast('An error occurred during submission. Please try again.', 'error');
+      if (uploadedFile) {
+        showToast('Uploading document attachment...', 'info');
+        const uploadRes = await uploadFile(uploadedFile, 'DOCUMENT');
+        attachmentUrl = uploadRes.url;
       }
-    }, 1000);
+
+      // Assemble data matching the state structure and await backend creation
+      await addSubmission({
+        company: {
+          industryName: data.industryName,
+          companyName: data.companyName,
+          representativeName: data.representativeName,
+          designation: data.designation,
+          email: data.email,
+          phone: data.phone,
+          website: data.website,
+          industrySector: data.industrySector
+        },
+        details: {
+          title: data.title,
+          description: data.description,
+          businessChallenge: data.businessChallenge,
+          existingProcess: data.existingProcess,
+          expectedOutcome: data.expectedOutcome,
+          projectObjectives: data.projectObjectives
+        },
+        technical: {
+          requiredTechnologies: data.requiredTechnologiesStr.split(',').map((s) => s.trim()).filter(Boolean),
+          requiredSkills: data.requiredSkillsStr.split(',').map((s) => s.trim()).filter(Boolean),
+          preferredBranches: data.preferredBranchesStr.split(',').map((s) => s.trim()).filter(Boolean),
+          preferredAcademicYear: data.preferredAcademicYear,
+          difficultyLevel: data.difficultyLevel as DifficultyLevel,
+          expectedDuration: data.expectedDuration
+        },
+        additional: {
+          expectedDeliverables: data.expectedDeliverables,
+          additionalNotes: data.additionalNotes || '',
+          fileAttachmentName: attachmentUrl,
+          declarationAccepted: data.declarationAccepted
+        }
+      });
+
+      setIsSubmitting(false);
+      setIsConfirming(false);
+      showToast('Problem Statement filed successfully! Status is Pending Approval.', 'success');
+      navigate('/industry/dashboard');
+    } catch (err: any) {
+      setIsSubmitting(false);
+      showToast(err.message || 'An error occurred during submission. Please try again.', 'error');
+    }
   };
 
   // File Upload Mock handlers

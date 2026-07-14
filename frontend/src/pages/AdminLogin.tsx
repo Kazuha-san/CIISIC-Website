@@ -44,11 +44,7 @@ export const AdminLogin: React.FC = () => {
     }
   };
 
-  const handleQuickLogin = () => {
-    setEmail('admin@ciisic.in');
-    setPassword('Admin@1234');
-    setError('');
-  };
+
 
   return (
     <div className="min-h-[80vh] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-slate-50 relative">
@@ -107,7 +103,7 @@ export const AdminLogin: React.FC = () => {
                 </label>
                 <button
                   type="button"
-                  onClick={() => alert('Instruction: Please use the demo credentials to reset or contact CII support.')}
+                  onClick={() => alert('Please contact the Confederation of Indian Industry (CII) Support to recover your password.')}
                   className="text-xs font-bold text-[#8f6d3b] hover:text-[#0b2545] hover:underline"
                 >
                   Forgot Password?
@@ -162,25 +158,7 @@ export const AdminLogin: React.FC = () => {
             </button>
           </form>
 
-          {/* Demo Credentials Assist Card */}
-          <div className="mt-6 pt-6 border-t border-slate-100 space-y-3">
-            <p className="text-center text-xs font-semibold text-slate-400 uppercase tracking-wider">
-              Demo Credentials
-            </p>
-            <div className="bg-[#eef4f8] p-4 rounded-xl border border-blue-100 flex flex-col sm:flex-row justify-between items-center gap-3">
-              <div className="text-left text-xs space-y-0.5">
-                <p className="text-slate-500">Email: <strong className="font-semibold text-[#0b2545]">admin@ciisic.org</strong></p>
-                <p className="text-slate-500">Password: <strong className="font-semibold text-[#0b2545]">CIIAdmin@2026</strong></p>
-              </div>
-              <button
-                type="button"
-                onClick={handleQuickLogin}
-                className="shrink-0 text-[10px] font-black uppercase bg-white border border-slate-200 hover:border-[#0b2545] text-[#0b2545] px-3.5 py-2 rounded-lg transition-colors shadow-sm active:scale-95"
-              >
-                Autofill Credentials
-              </button>
-            </div>
-          </div>
+
         </div>
 
         {/* Alternate link */}

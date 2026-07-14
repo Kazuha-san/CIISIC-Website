@@ -71,27 +71,120 @@ export async function fetchChallenges(): Promise<ProblemStatement[]> {
   return (challenges || []).map(mapBackendToProblemStatement);
 }
 
+function mapSectorToCellTheme(sector: string): string {
+  const normalized = (sector || '').toUpperCase().trim();
+  if (normalized.includes("AGRI") || normalized.includes("FARM") || normalized.includes("FOOD")) {
+    return "AGRITECH";
+  }
+  if (normalized.includes("AI") || normalized.includes("SOFTWARE") || normalized.includes("TECH") || normalized.includes("INFORMATION")) {
+    return "AI_IN_BUSINESS";
+  }
+  if (normalized.includes("START") || normalized.includes("ENTREP")) {
+    return "STARTUP";
+  }
+  if (normalized.includes("FAMILY") || normalized.includes("BUSINESS")) {
+    return "FAMILY_BUSINESS";
+  }
+  if (normalized.includes("TALENT") || normalized.includes("EDUCATION") || normalized.includes("ACADEMIC")) {
+    return "TALENT_READINESS";
+  }
+  if (normalized.includes("SKILL") || normalized.includes("TRAIN") || normalized.includes("DEVELOPMENT")) {
+    return "SKILL_DEVELOPMENT";
+  }
+  return "RESEARCH_INNOVATION";
+}
+
+function getDeadline(payload: any): string {
+  const notes = payload.additional?.additionalNotes || '';
+  const match = notes.match(/Target date:\s*(\d{2})\/(\d{2})\/(\d{4})/);
+  if (match) {
+    const [_, day, month, year] = match;
+    const date = new Date(Number(year), Number(month) - 1, Number(day), 12, 0, 0);
+    if (date > new Date()) {
+      return date.toISOString();
+    }
+  }
+  const defaultDate = new Date();
+  defaultDate.setMonth(defaultDate.getMonth() + 3);
+  return defaultDate.toISOString();
+}
+
+function getBudgetRange(payload: any): string {
+  const notes = payload.additional?.additionalNotes || '';
+  const match = notes.match(/Budget allocated:\s*([^\.]+)/);
+  if (match) {
+    return match[1].trim();
+  }
+  return notes || 'Not Specified';
+}
+
+function flattenChallengePayload(payload: any): any {
+  const flat: any = {
+    title: payload.details?.title || 'No Title Provided',
+    description: payload.details?.description || 'No Description Provided',
+    problemStatement: payload.details?.businessChallenge || payload.details?.description || 'No Problem Statement Provided',
+    domain: mapSectorToCellTheme(payload.company?.industrySector || payload.company?.industryName || ''),
+    deadline: getDeadline(payload),
+    budgetRange: getBudgetRange(payload),
+    tags: payload.technical?.requiredTechnologies || [],
+    attachmentUrls: payload.additional?.fileAttachmentName ? [payload.additional.fileAttachmentName] : [],
+    organizationName: payload.company?.companyName || 'Unknown Organization',
+    duration: payload.technical?.expectedDuration || '6 Months',
+  };
+
+  if (payload.status) {
+    const statusMap: Record<SubmissionStatus, string> = {
+      'Pending': 'PENDING_APPROVAL',
+      'Approved': 'OPEN',
+      'Rejected': 'REJECTED',
+    };
+    flat.status = statusMap[payload.status as SubmissionStatus] || 'DRAFT';
+  }
+
+  return flat;
+}
+
 export async function createChallenge(payload: Omit<ProblemStatement, 'id' | 'status' | 'submittedDate'>): Promise<ProblemStatement> {
+  const flatPayload = flattenChallengePayload(payload);
   const created = await fetchJSON<any>(`${API_BASE}/api/challenges`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
+    body: JSON.stringify(flatPayload),
   });
   return mapBackendToProblemStatement(created);
 }
 
 export async function updateChallenge(id: string, payload: Partial<ProblemStatement>) {
+  const flatPayload = {};
+  const tempFlat = flattenChallengePayload(payload);
+  
+  // Extract only updated fields for PATCH to avoid overwriting defaults
+  if (payload.details?.title) (flatPayload as any).title = tempFlat.title;
+  if (payload.details?.description) (flatPayload as any).description = tempFlat.description;
+  if (payload.details?.businessChallenge) (flatPayload as any).problemStatement = tempFlat.problemStatement;
+  if (payload.company?.industrySector || payload.company?.industryName) (flatPayload as any).domain = tempFlat.domain;
+  if (payload.additional?.additionalNotes) {
+    (flatPayload as any).budgetRange = tempFlat.budgetRange;
+    (flatPayload as any).deadline = tempFlat.deadline;
+  }
+  if (payload.technical?.requiredTechnologies) (flatPayload as any).tags = tempFlat.tags;
+  if (payload.additional?.fileAttachmentName) (flatPayload as any).attachmentUrls = tempFlat.attachmentUrls;
+  if (payload.company?.companyName) (flatPayload as any).organizationName = tempFlat.organizationName;
+  if (payload.technical?.expectedDuration) (flatPayload as any).duration = tempFlat.duration;
+  if (payload.status) (flatPayload as any).status = tempFlat.status;
+
   const updated = await fetchJSON<any>(`${API_BASE}/api/challenges/${id}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
+    body: JSON.stringify(flatPayload),
   });
   return mapBackendToProblemStatement(updated);
 }
 
 /** Admin review */
 export async function reviewChallenge(id: string, status: SubmissionStatus, remarks?: string) {
-  const body: any = { status };
+  const action = status === 'Approved' ? 'APPROVE' : 'REJECT';
+  const body: any = { action };
   if (remarks) body.remarks = remarks;
   await fetchJSON<any>(`${API_BASE}/api/admin/challenges/${id}/review`, {
     method: 'POST',

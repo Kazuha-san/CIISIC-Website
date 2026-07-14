@@ -34,12 +34,7 @@ export const IndustryLogin: React.FC = () => {
     }
   };
 
-  const handleQuickLogin = () => {
-    setEmail('hr@techcorp.com');
-    setPassword('Industry@2026');
-    setError('');
-    showToast('Credentials autofilled! Please click Sign In.', 'info');
-  };
+
 
   return (
     <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-slate-50/50 relative overflow-hidden">
@@ -124,7 +119,7 @@ export const IndustryLogin: React.FC = () => {
                   </label>
                   <button
                     type="button"
-                    onClick={() => alert('Demo Feature: Simply input any password to login, or use the Credentials Assistant.')}
+                    onClick={() => alert('Please contact the Confederation of Indian Industry (CII) Support to recover your password.')}
                     className="text-[11px] font-semibold text-[#0056b3] hover:underline"
                     id="forgot-password-btn"
                   >
@@ -175,27 +170,7 @@ export const IndustryLogin: React.FC = () => {
               </button>
             </form>
 
-            {/* Demo Credentials Assist Card */}
-            <div className="pt-6 border-t border-slate-100 space-y-3">
-              <div className="flex items-center justify-center gap-1.5 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">
-                <Sparkles className="h-3 w-3 text-[#0056b3]" />
-                Demo Credentials
-              </div>
-              <div className="bg-[#f0f5fa] p-4 rounded-2xl border border-blue-100/50 flex flex-col sm:flex-row justify-between items-center gap-4">
-                <div className="text-left text-xs space-y-1">
-                  <p className="text-slate-500 font-medium">Email: <strong className="font-bold text-[#002147]">hr@techcorp.com</strong></p>
-                  <p className="text-slate-500 font-medium">Password: <strong className="font-bold text-[#002147]">Industry@2026</strong></p>
-                </div>
-                <button
-                  type="button"
-                  onClick={handleQuickLogin}
-                  className="shrink-0 text-[10px] font-black uppercase tracking-wider bg-white border border-slate-200/80 hover:border-[#0056b3] text-[#002147] hover:text-[#0056b3] px-3.5 py-2.5 rounded-xl transition-all shadow-sm active:scale-95"
-                  id="autofill-btn"
-                >
-                  Autofill Credentials
-                </button>
-              </div>
-            </div>
+
           </div>
         </div>
 

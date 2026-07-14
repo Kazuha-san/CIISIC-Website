@@ -11,6 +11,27 @@ export const RootLayout: React.FC<{ children: React.ReactNode }> = ({ children }
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState<string>('hero');
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
+  // Close profile dropdown on click outside
+  useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (dropdownOpen && !(e.target as HTMLElement).closest('.profile-dropdown-container')) {
+        setDropdownOpen(false);
+      }
+    };
+    document.addEventListener('click', handleOutsideClick);
+    return () => document.removeEventListener('click', handleOutsideClick);
+  }, [dropdownOpen]);
 
   // Active section scroll highlighter
   useEffect(() => {
@@ -93,13 +114,70 @@ export const RootLayout: React.FC<{ children: React.ReactNode }> = ({ children }
                 )}
               </span>
             </div>
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-1 hover:text-blue-400 transition-colors font-medium bg-white/5 px-2 py-0.5 rounded border border-white/10 hover:bg-white/10"
-            >
-              <LogOut className="h-3 w-3" />
-              Sign Out
-            </button>
+            <div className="relative profile-dropdown-container">
+              <button
+                onClick={() => setDropdownOpen(!dropdownOpen)}
+                className="flex items-center gap-1.5 hover:bg-white/10 px-2.5 py-0.5 rounded border border-white/10 hover:border-white/20 transition-all cursor-pointer font-bold select-none text-[10px]"
+              >
+                <div className="w-4 h-4 rounded-full bg-blue-500 text-white flex items-center justify-center font-extrabold text-[8px] uppercase shadow-sm">
+                  {getInitials(currentUser.name)}
+                </div>
+                <span>{currentUser.name}</span>
+                <span className="text-[7px] opacity-75">▼</span>
+              </button>
+
+              {dropdownOpen && (
+                <div className="absolute right-0 mt-1.5 w-52 bg-white text-slate-800 rounded-lg shadow-lg border border-slate-200 py-1 z-[100] origin-top-right text-xs divide-y divide-slate-100">
+                  {/* User Profile Header */}
+                  <div className="px-3 py-2 bg-slate-50/50 rounded-t-lg">
+                    <p className="font-extrabold text-slate-800 truncate text-[11px]">{currentUser.name}</p>
+                    <p className="text-[9px] text-[#002147] font-black uppercase tracking-wider mt-0.5">
+                      {currentUser.role === 'admin' ? 'CII Admin' : 'Industry Partner'}
+                    </p>
+                    <p className="text-[10px] text-slate-500 font-semibold truncate mt-0.5">{currentUser.email}</p>
+                  </div>
+                  
+                  {/* Actions */}
+                  <div className="p-1 space-y-0.5">
+                    <Link
+                      to={currentUser.role === 'admin' ? '/admin/dashboard' : '/industry/dashboard'}
+                      onClick={() => setDropdownOpen(false)}
+                      className="flex items-center gap-1.5 px-2.5 py-1.5 font-bold text-slate-700 hover:bg-slate-50 hover:text-[#002147] rounded transition-colors"
+                    >
+                      Dashboard
+                    </Link>
+                    {currentUser.role === 'industry' && (
+                      <Link
+                        to="/industry/submit"
+                        onClick={() => setDropdownOpen(false)}
+                        className="flex items-center gap-1.5 px-2.5 py-1.5 font-bold text-slate-700 hover:bg-slate-50 hover:text-[#002147] rounded transition-colors"
+                      >
+                        Submit Problem
+                      </Link>
+                    )}
+                    {currentUser.designation && (
+                      <div className="px-2.5 py-1.5 text-[10px] text-slate-400 font-medium border-t border-slate-50 mt-0.5">
+                        Designation: <span className="text-slate-600 font-bold">{currentUser.designation}</span>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Sign Out */}
+                  <div className="p-1">
+                    <button
+                      onClick={() => {
+                        setDropdownOpen(false);
+                        handleLogout();
+                      }}
+                      className="w-full flex items-center gap-1.5 px-2.5 py-1.5 font-bold text-red-600 hover:bg-red-50 hover:text-red-700 rounded transition-colors text-left cursor-pointer"
+                    >
+                      <LogOut className="h-3.5 w-3.5" />
+                      Sign Out
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
@@ -185,22 +263,46 @@ export const RootLayout: React.FC<{ children: React.ReactNode }> = ({ children }
               >
                 Get Involved
               </button>
+
+              {currentUser && (
+                <Link
+                  to={currentUser.role === 'admin' ? '/admin/dashboard' : '/industry/dashboard'}
+                  className={`px-2.5 py-2 rounded-lg text-xs xl:text-sm font-bold whitespace-nowrap transition-all ${
+                    location.pathname.includes('/dashboard') 
+                      ? 'text-[#001A66] bg-slate-150 font-black shadow-sm' 
+                      : 'text-[#001A66] hover:text-[#0056b3] hover:bg-slate-50'
+                  }`}
+                >
+                  Dashboard
+                </Link>
+              )}
             </div>
 
             {/* Desktop CTA buttons on the right */}
             <div className="hidden lg:flex items-center space-x-3 shrink-0 pl-2 xl:pl-6">
-              <Link
-                to="/industry/login"
-                className="px-4 py-2.5 bg-[#001A66] text-white text-xs font-bold rounded-lg hover:bg-[#0056b3] transition-all whitespace-nowrap"
-              >
-                Register as Industry
-              </Link>
-              <Link
-                to="/admin/login"
-                className="px-4 py-2.5 bg-[#001A66] text-white text-xs font-bold rounded-lg hover:bg-[#0056b3] transition-all whitespace-nowrap"
-              >
-                CII Admin
-              </Link>
+              {!currentUser ? (
+                <>
+                  <Link
+                    to="/industry/login"
+                    className="px-4 py-2.5 bg-[#001A66] text-white text-xs font-bold rounded-lg hover:bg-[#0056b3] transition-all whitespace-nowrap"
+                  >
+                    Register as Industry
+                  </Link>
+                  <Link
+                    to="/admin/login"
+                    className="px-4 py-2.5 bg-[#001A66] text-white text-xs font-bold rounded-lg hover:bg-[#0056b3] transition-all whitespace-nowrap"
+                  >
+                    CII Admin
+                  </Link>
+                </>
+              ) : (
+                <Link
+                  to={currentUser.role === 'admin' ? '/admin/dashboard' : '/industry/dashboard'}
+                  className="px-4 py-2 bg-slate-100 text-[#002147] border border-[#002147]/10 hover:border-[#002147]/20 text-xs font-black rounded-lg hover:bg-slate-250 transition-all whitespace-nowrap"
+                >
+                  Go to Dashboard
+                </Link>
+              )}
             </div>
 
             {/* Mobile menu button */}
@@ -271,20 +373,53 @@ export const RootLayout: React.FC<{ children: React.ReactNode }> = ({ children }
               </button>
 
               <div className="border-t border-slate-100 my-2 pt-2 space-y-2 px-3">
-                <Link
-                  to="/industry/login"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="block w-full py-2.5 rounded-lg text-base font-bold bg-[#001A66] text-white text-center hover:bg-[#0056b3] transition-all"
-                >
-                  Register as Industry
-                </Link>
-                <Link
-                  to="/admin/login"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="block w-full py-2.5 rounded-lg text-base font-bold bg-[#001A66] text-white text-center hover:bg-[#0056b3] transition-all"
-                >
-                  CII Admin
-                </Link>
+                {!currentUser ? (
+                  <>
+                    <Link
+                      to="/industry/login"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="block w-full py-2.5 rounded-lg text-base font-bold bg-[#001A66] text-white text-center hover:bg-[#0056b3] transition-all"
+                    >
+                      Register as Industry
+                    </Link>
+                    <Link
+                      to="/admin/login"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="block w-full py-2.5 rounded-lg text-base font-bold bg-[#001A66] text-white text-center hover:bg-[#0056b3] transition-all"
+                    >
+                      CII Admin
+                    </Link>
+                  </>
+                ) : (
+                  <>
+                    <Link
+                      to={currentUser.role === 'admin' ? '/admin/dashboard' : '/industry/dashboard'}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="block w-full py-2.5 rounded-lg text-base font-bold bg-slate-100 text-[#002147] text-center border border-slate-200"
+                    >
+                      Go to Dashboard
+                    </Link>
+                    {currentUser.role === 'industry' && (
+                      <Link
+                        to="/industry/submit"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="block w-full py-2.5 rounded-lg text-base font-bold bg-slate-100 text-[#002147] text-center border border-slate-200"
+                      >
+                        Submit Problem
+                      </Link>
+                    )}
+                    <button
+                      onClick={() => {
+                        setMobileMenuOpen(false);
+                        handleLogout();
+                      }}
+                      className="w-full flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-base font-bold bg-red-650 text-white hover:bg-red-700 transition-all cursor-pointer"
+                    >
+                      <LogOut className="h-4 w-4" />
+                      Sign Out
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           </div>

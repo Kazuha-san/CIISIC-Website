@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
 import { SubmissionStatus } from '../types';
+import { stripHTML } from '../lib/html';
 
 export const AdminDashboard: React.FC = () => {
   const { submissions, updateSubmissionStatus, showToast, resetData, currentUser } = useApp();
@@ -274,7 +275,7 @@ export const AdminDashboard: React.FC = () => {
                           <p className="font-bold text-[#0b2545] line-clamp-1 leading-normal">
                             {sub.details.title}
                           </p>
-                          <p className="text-xs text-slate-400 line-clamp-1 mt-0.5">{sub.details.description}</p>
+                          <p className="text-xs text-slate-400 line-clamp-1 mt-0.5">{stripHTML(sub.details.description)}</p>
                         </div>
                       </td>
 

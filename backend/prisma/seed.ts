@@ -146,12 +146,12 @@ async function main() {
   // ─── Industry SPOC ────────────────────────────────────────────────────────
   const industryUser = await prisma.user.upsert({
     where: { email: "hr@techcorp.com" },
-    update: { passwordHash: await hash("Industry@2026") },
+    update: { passwordHash: await hash("Industry@1234") },
     create: {
       email: "hr@techcorp.com",
       name: "Rahul Mehta",
       role: "INDUSTRY_SPOC",
-      passwordHash: await hash("Industry@2026"),
+      passwordHash: await hash("Industry@1234"),
       emailVerified: true,
       isActive: true,
     },
@@ -260,7 +260,7 @@ async function main() {
   console.log("Super Admin:       superadmin@ciisic.in   / Admin@1234");
   console.log("CII Admin:         admin@ciisic.in        / Admin@1234");
   console.log("Institution SPOC:  spoc@jlu.edu.in        / Spoc@1234");
-  console.log("Industry SPOC:     hr@techcorp.com        / Industry@2026");
+  console.log("Industry SPOC:     hr@techcorp.com        / Industry@1234");
   console.log("Student:           student@jlu.edu.in     / Student@1234");
   console.log("──────────────────────────────────────────────────────────────");
 }
