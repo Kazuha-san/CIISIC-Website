@@ -34,7 +34,7 @@ describe("File Upload validations", () => {
     const formData = new FormData();
     formData.append("type", "LOGO");
 
-    const req = new NextRequest("http://localhost:3000/api/upload", {
+    const req = new NextRequest("http://ciisic.test/api/upload", {
       method: "POST",
       body: formData,
     });
@@ -51,7 +51,7 @@ describe("File Upload validations", () => {
     formData.append("file", file);
     formData.append("type", "INVALID");
 
-    const req = new NextRequest("http://localhost:3000/api/upload", {
+    const req = new NextRequest("http://ciisic.test/api/upload", {
       method: "POST",
       body: formData,
     });
@@ -70,7 +70,7 @@ describe("File Upload validations", () => {
     formData.append("file", file);
     formData.append("type", "LOGO");
 
-    const req = new NextRequest("http://localhost:3000/api/upload", {
+    const req = new NextRequest("http://ciisic.test/api/upload", {
       method: "POST",
       body: formData,
     });
@@ -89,7 +89,7 @@ describe("File Upload validations", () => {
     formData.append("file", file);
     formData.append("type", "DOCUMENT");
 
-    const req = new NextRequest("http://localhost:3000/api/upload", {
+    const req = new NextRequest("http://ciisic.test/api/upload", {
       method: "POST",
       body: formData,
     });
@@ -107,7 +107,7 @@ describe("File Upload validations", () => {
     formData.append("file", file);
     formData.append("type", "LOGO");
 
-    const req = new NextRequest("http://localhost:3000/api/upload", {
+    const req = new NextRequest("http://ciisic.test/api/upload", {
       method: "POST",
       body: formData,
     });
@@ -125,7 +125,7 @@ describe("File Upload validations", () => {
     formData.append("file", file);
     formData.append("type", "DOCUMENT");
 
-    const req = new NextRequest("http://localhost:3000/api/upload", {
+    const req = new NextRequest("http://ciisic.test/api/upload", {
       method: "POST",
       body: formData,
     });

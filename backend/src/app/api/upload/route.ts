@@ -92,8 +92,12 @@ export async function POST(req: NextRequest) {
       userAgent,
     });
 
+    const absoluteUrl = relativeUrl.startsWith("/")
+      ? new URL(relativeUrl, req.nextUrl.origin).toString()
+      : relativeUrl;
+
     return created({
-      url: relativeUrl,
+      url: absoluteUrl,
       fileName: file.name,
       secureName,
       size,

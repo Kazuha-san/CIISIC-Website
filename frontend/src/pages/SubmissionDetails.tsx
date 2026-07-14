@@ -6,6 +6,7 @@ import {
   Edit, Save, X
 } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
+import { sanitizeHTML } from '../lib/html';
 
 export const SubmissionDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -281,15 +282,21 @@ export const SubmissionDetails: React.FC = () => {
                 </div>
               </div>
             ) : (
-              <div className="space-y-4 text-xs sm:text-sm">
+              <div className="space-y-5 text-xs sm:text-sm">
                 <div className="space-y-1">
                   <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Problem Statement Description</span>
-                  <p className="text-slate-600 leading-relaxed font-medium">{submission.details.description}</p>
+                  <div 
+                    className="text-slate-700 leading-relaxed font-medium html-content space-y-2 text-xs sm:text-sm"
+                    dangerouslySetInnerHTML={{ __html: sanitizeHTML(submission.details.description) }}
+                  />
                 </div>
 
                 <div className="space-y-1">
                   <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Expected Outcome</span>
-                  <p className="text-slate-600 leading-relaxed font-medium">{submission.details.expectedOutcome}</p>
+                  <div 
+                    className="text-slate-700 leading-relaxed font-medium html-content space-y-2 text-xs sm:text-sm"
+                    dangerouslySetInnerHTML={{ __html: sanitizeHTML(submission.details.expectedOutcome) }}
+                  />
                 </div>
               </div>
             )}
@@ -327,7 +334,13 @@ export const SubmissionDetails: React.FC = () => {
                     </div>
                   </div>
                   <button
-                    onClick={() => alert(`Initiating mock download: ${submission.additional.fileAttachmentName}`)}
+                    onClick={() => {
+                      if (submission.additional.fileAttachmentName.startsWith('http') || submission.additional.fileAttachmentName.startsWith('/')) {
+                        window.open(submission.additional.fileAttachmentName, '_blank');
+                      } else {
+                        alert(`Initiating mock download: ${submission.additional.fileAttachmentName}`);
+                      }
+                    }}
                     className="flex items-center gap-1 bg-white border border-slate-200 text-[#0b2545] hover:border-[#0b2545] px-3.5 py-1.5 rounded-lg text-xs font-black shadow-sm transition-colors cursor-pointer"
                   >
                     <Download className="h-3.5 w-3.5" /> Download

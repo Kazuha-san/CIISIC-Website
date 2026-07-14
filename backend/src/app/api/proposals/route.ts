@@ -38,7 +38,7 @@ export async function GET(req: NextRequest) {
     let requestingUserInstitutionId: string | undefined;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let where: any = status ? { status } : {};
+    const where: any = status ? { status } : {};
 
     if (role === "STUDENT") {
       const profile = await prisma.studentProfile.findUnique({

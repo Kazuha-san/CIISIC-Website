@@ -36,7 +36,7 @@ describe("Admin Challenge Review Workflow", () => {
       expires: "",
     });
 
-    const req = new NextRequest("http://localhost:3000/api/admin/challenges/challenge-1/review", {
+    const req = new NextRequest("http://ciisic.test/api/admin/challenges/challenge-1/review", {
       method: "POST",
       body: JSON.stringify({ action: "APPROVE", remarks: "Great project" }),
     });
@@ -77,7 +77,7 @@ describe("Admin Challenge Review Workflow", () => {
       },
     } as any);
 
-    const req = new NextRequest("http://localhost:3000/api/admin/challenges/challenge-1/review", {
+    const req = new NextRequest("http://ciisic.test/api/admin/challenges/challenge-1/review", {
       method: "POST",
       body: JSON.stringify({ action: "APPROVE", remarks: "Approved" }),
     });
@@ -131,7 +131,7 @@ describe("Admin Challenge Review Workflow", () => {
       },
     } as any);
 
-    const req = new NextRequest("http://localhost:3000/api/admin/challenges/challenge-1/review", {
+    const req = new NextRequest("http://ciisic.test/api/admin/challenges/challenge-1/review", {
       method: "POST",
       body: JSON.stringify({ action: "REJECT", remarks: "Rejected, needs more detail" }),
     });
@@ -176,7 +176,7 @@ describe("Admin Challenge Review Workflow", () => {
       },
     } as any);
 
-    const req = new NextRequest("http://localhost:3000/api/admin/challenges/challenge-1/review");
+    const req = new NextRequest("http://ciisic.test/api/admin/challenges/challenge-1/review");
     const res = await getReviewDetails(req, { params: Promise.resolve({ id: "challenge-1" }) });
     expect(res.status).toBe(200);
 

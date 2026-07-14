@@ -6,6 +6,7 @@ import {
   Calendar, DollarSign, UploadCloud, ArrowLeft, RefreshCw, Eye
 } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
+import { sanitizeHTML, stripHTML } from '../lib/html';
 
 export const IndustryDashboard: React.FC = () => {
   const { currentUser, submissions, addSubmission, showToast } = useApp();
@@ -489,7 +490,7 @@ export const IndustryDashboard: React.FC = () => {
                     </div>
 
                     <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed break-words break-all">
-                      {sub.details.description}
+                      {stripHTML(sub.details.description)}
                     </p>
 
                     <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-100">
@@ -956,12 +957,18 @@ export const IndustryDashboard: React.FC = () => {
                     
                     <div>
                       <span className="text-[10px] font-black text-slate-400 uppercase tracking-wide block">Detailed Description</span>
-                      <p className="text-slate-600 font-medium leading-relaxed mt-1 whitespace-pre-wrap">{description}</p>
+                      <div 
+                        className="text-slate-700 leading-relaxed font-medium html-content mt-1 space-y-2 text-xs sm:text-sm"
+                        dangerouslySetInnerHTML={{ __html: sanitizeHTML(description) }}
+                      />
                     </div>
 
                     <div>
                       <span className="text-[10px] font-black text-slate-400 uppercase tracking-wide block">Expected Outcomes</span>
-                      <p className="text-slate-600 font-medium leading-relaxed mt-1 whitespace-pre-wrap">{expectedOutcomes}</p>
+                      <div 
+                        className="text-slate-700 leading-relaxed font-medium html-content mt-1 space-y-2 text-xs sm:text-sm"
+                        dangerouslySetInnerHTML={{ __html: sanitizeHTML(expectedOutcomes) }}
+                      />
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-2">

@@ -75,7 +75,7 @@ describe("RBAC & Object-Level Access Control", () => {
         },
       } as any);
 
-      const req = new NextRequest("http://localhost:3000/api/challenges/challenge-1");
+      const req = new NextRequest("http://ciisic.test/api/challenges/challenge-1");
       const res = await getChallenge(req, { params: Promise.resolve({ id: "challenge-1" }) });
 
       expect(res.status).toBe(200);
@@ -97,7 +97,7 @@ describe("RBAC & Object-Level Access Control", () => {
         industryProfile: { userId: "industry-user-1" },
       } as any);
 
-      const req = new NextRequest("http://localhost:3000/api/challenges/challenge-2");
+      const req = new NextRequest("http://ciisic.test/api/challenges/challenge-2");
       const res = await getChallenge(req, { params: Promise.resolve({ id: "challenge-2" }) });
 
       expect(res.status).toBe(404); // Returns 404 for security / obfuscation
@@ -116,7 +116,7 @@ describe("RBAC & Object-Level Access Control", () => {
         industryProfile: { userId: "industry-user-1" },
       } as any);
 
-      const req = new NextRequest("http://localhost:3000/api/challenges/challenge-2");
+      const req = new NextRequest("http://ciisic.test/api/challenges/challenge-2");
       const res = await getChallenge(req, { params: Promise.resolve({ id: "challenge-2" }) });
 
       expect(res.status).toBe(200);
@@ -136,7 +136,7 @@ describe("RBAC & Object-Level Access Control", () => {
         challenge: { industryProfile: { userId: "industry-user-1" } },
       } as any);
 
-      const req = new NextRequest("http://localhost:3000/api/proposals/prop-1");
+      const req = new NextRequest("http://ciisic.test/api/proposals/prop-1");
       const res = await getProposalDetail(req, { params: Promise.resolve({ id: "prop-1" }) });
 
       expect(res.status).toBe(403);
@@ -154,7 +154,7 @@ describe("RBAC & Object-Level Access Control", () => {
         challenge: { industryProfile: { userId: "industry-user-1" } },
       } as any);
 
-      const req = new NextRequest("http://localhost:3000/api/proposals/prop-1");
+      const req = new NextRequest("http://ciisic.test/api/proposals/prop-1");
       const res = await getProposalDetail(req, { params: Promise.resolve({ id: "prop-1" }) });
 
       expect(res.status).toBe(200);
@@ -176,7 +176,7 @@ describe("RBAC & Object-Level Access Control", () => {
         challenge: { industryProfile: { userId: "industry-user-1" } },
       } as any);
 
-      const req = new NextRequest("http://localhost:3000/api/proposals/prop-1");
+      const req = new NextRequest("http://ciisic.test/api/proposals/prop-1");
       const res = await getProposalDetail(req, { params: Promise.resolve({ id: "prop-1" }) });
 
       expect(res.status).toBe(200);
@@ -198,7 +198,7 @@ describe("RBAC & Object-Level Access Control", () => {
         challenge: { industryProfile: { userId: "industry-user-1" } },
       } as any);
 
-      const req = new NextRequest("http://localhost:3000/api/proposals/prop-1");
+      const req = new NextRequest("http://ciisic.test/api/proposals/prop-1");
       const res = await getProposalDetail(req, { params: Promise.resolve({ id: "prop-1" }) });
 
       expect(res.status).toBe(403);
