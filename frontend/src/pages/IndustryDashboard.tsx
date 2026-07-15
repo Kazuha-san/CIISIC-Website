@@ -520,7 +520,7 @@ export const IndustryDashboard: React.FC = () => {
                       </div>
 
                       <Link 
-                        to={`/admin/details/${sub.id}`} 
+                        to={`/details/${sub.id}`} 
                         className="inline-flex items-center gap-1 text-xs font-bold text-[#0056b3] hover:underline"
                       >
                         View Full Details <ChevronRight className="h-3.5 w-3.5" />

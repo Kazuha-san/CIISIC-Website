@@ -31,8 +31,13 @@ const mapUserRole = (user: any): User => {
     INSTITUTION_SPOC: 'admin',
   };
   return {
-    ...user,
+    id: user.id,
+    name: user.name,
+    email: user.email,
     role: roleMap[user.role] || 'industry',
+    companyName: user.industryProfile?.companyName ?? user.companyName,
+    designation: user.industryProfile?.designation ?? user.designation,
+    industry: user.industryProfile?.industry ?? user.industry,
   };
 };
 
@@ -56,7 +61,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return null;
   });
 
-  // Fetch session and challenges on mount
+  // Fetch session on mount
   useEffect(() => {
     (async () => {
       const user = await getSession();
@@ -65,6 +70,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       } else {
         setCurrentUser(null);
       }
+    })();
+  }, []);
+
+  // Fetch challenges whenever current user changes
+  useEffect(() => {
+    (async () => {
       try {
         const challenges = await fetchChallenges();
         setSubmissions(challenges);
@@ -72,7 +83,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         console.error("Failed to fetch challenges:", err);
       }
     })();
-  }, []);
+  }, [currentUser]);
 
   // Sync submissions to localStorage (optional)
   useEffect(() => {

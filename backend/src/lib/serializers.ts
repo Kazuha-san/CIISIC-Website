@@ -41,6 +41,7 @@ export type SafeChallenge = {
     representativeName?: string;
   };
   _count?: { proposals: number };
+  attachmentUrls?: string[];
 };
 export type SafeProposal = {
   id: string;
@@ -132,6 +133,7 @@ export function serializeChallenge(
       representativeName: challenge.industryProfile?.user?.name ?? "",
     },
     _count: challenge._count,
+    attachmentUrls: challenge.attachmentUrls ?? [],
   };
 }
 

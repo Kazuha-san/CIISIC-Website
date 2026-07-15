@@ -41,6 +41,17 @@ const AdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return <>{children}</>;
 };
 
+// Shared Protected Route requiring any logged in user
+const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { currentUser } = useApp();
+
+  if (!currentUser) {
+    return <Navigate to="/" replace />;
+  }
+
+  return <>{children}</>;
+};
+
 // Route controller that redirects already authenticated users
 const GuestRoute: React.FC<{ children: React.ReactNode; role: 'industry' | 'admin' }> = ({ children, role }) => {
   const { currentUser } = useApp();
@@ -113,11 +124,11 @@ export default function App() {
               } 
             />
             <Route 
-              path="/admin/details/:id" 
+              path="/details/:id" 
               element={
-                <AdminRoute>
+                <ProtectedRoute>
                   <SubmissionDetails />
-                </AdminRoute>
+                </ProtectedRoute>
               } 
             />
 

@@ -53,6 +53,9 @@ export async function POST(req: NextRequest) {
 
     const user = await prisma.user.findUnique({
       where: { email },
+      include: {
+        industryProfile: true,
+      },
     });
 
     if (!user) {
@@ -84,8 +87,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Role verification: Only CII_ADMIN and INDUSTRY_SPOC allowed to authenticate
-    if (user.role !== "CII_ADMIN" && user.role !== "INDUSTRY_SPOC") {
+    // Role verification: Only CII_ADMIN, INDUSTRY_SPOC and SUPER_ADMIN allowed to authenticate
+    if (user.role !== "CII_ADMIN" && user.role !== "INDUSTRY_SPOC" && user.role !== "SUPER_ADMIN") {
       return NextResponse.json(
         { success: false, message: "Insufficient permissions to access portals" },
         { status: 403, headers }
@@ -122,11 +125,12 @@ export async function POST(req: NextRequest) {
           email: user.email,
           role: user.role,
           avatarUrl: user.avatarUrl || null,
+          industryProfile: user.industryProfile,
         },
       },
       { status: 200, headers }
     );
-  } catch (err: any) {
+  } catch (err) {
     console.error("[POST /api/auth/login] error:", err);
     return NextResponse.json(
       { success: false, message: "An unexpected error occurred" },

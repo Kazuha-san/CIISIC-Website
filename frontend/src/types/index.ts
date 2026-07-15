@@ -56,4 +56,5 @@ export interface User {
   role: 'industry' | 'admin';
   companyName?: string;
   designation?: string;
+  industry?: string;
 }

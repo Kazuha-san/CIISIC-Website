@@ -91,6 +91,11 @@ export async function fetchChallenges(): Promise<ProblemStatement[]> {
   return (challenges || []).map(mapBackendToProblemStatement);
 }
 
+export async function fetchChallengeById(id: string): Promise<ProblemStatement> {
+  const challenge = await fetchJSON<any>(`${API_BASE}/api/challenges/${id}`);
+  return mapBackendToProblemStatement(challenge);
+}
+
 function mapSectorToCellTheme(sector: string): string {
   const normalized = (sector || '').toUpperCase().trim();
   if (normalized.includes("AGRI") || normalized.includes("FARM") || normalized.includes("FOOD")) {

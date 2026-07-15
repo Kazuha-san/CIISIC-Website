@@ -311,7 +311,7 @@ export const AdminDashboard: React.FC = () => {
                       <td className="px-6 py-4 whitespace-nowrap text-right">
                         <div className="inline-flex items-center gap-1.5">
                           <Link
-                            to={`/admin/details/${sub.id}`}
+                            to={`/details/${sub.id}`}
                             className="p-1.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-600 hover:bg-[#0b2545] hover:text-white transition-all shadow-sm"
                             title="View Full Details"
                           >
@@ -369,7 +369,7 @@ export const AdminDashboard: React.FC = () => {
                     <span className="text-[10px] text-slate-400 font-mono">Filing Date: {new Date(sub.submittedDate).toLocaleDateString()}</span>
                     <div className="flex gap-2">
                       <Link
-                        to={`/admin/details/${sub.id}`}
+                        to={`/details/${sub.id}`}
                         className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-[#0b2545] flex items-center gap-1"
                       >
                         <Eye className="h-3 w-3" /> View Details
