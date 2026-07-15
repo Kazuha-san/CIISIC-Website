@@ -131,6 +131,12 @@ export async function POST(
             industry: true,
             logoUrl: true,
             isCIIMember: true,
+            user: {
+              select: {
+                email: true,
+                name: true,
+              },
+            },
           },
         },
         _count: { select: { proposals: true } },

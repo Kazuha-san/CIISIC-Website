@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { 
   Building2, FileText, Settings, ShieldAlert, ArrowLeft, CheckCircle, 
@@ -7,40 +7,112 @@ import {
 } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
 import { sanitizeHTML } from '../lib/html';
+import { fetchChallengeById } from '../lib/api';
+import { ProblemStatement } from '../types';
 
 export const SubmissionDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { submissions, updateSubmissionStatus, updateSubmission, showToast } = useApp();
+  const { currentUser, submissions, updateSubmissionStatus, updateSubmission, showToast } = useApp();
 
-  const submission = submissions.find((sub) => sub.id === id);
+  const [submission, setSubmission] = useState<ProblemStatement | null>(() => {
+    return submissions.find((sub) => sub.id === id) || null;
+  });
+  const [isLoading, setIsLoading] = useState(!submission);
+  const [error, setError] = useState<string | null>(null);
 
-  const [remarks, setRemarks] = useState(submission?.reviewRemarks || '');
+  const backLink = currentUser?.role === 'admin' ? '/admin/dashboard' : '/industry/dashboard';
+  const backLinkText = currentUser?.role === 'admin' ? 'Back to Admin Command Ledger' : 'Back to Industry Workspace';
+
+  const [remarks, setRemarks] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
 
   // Editable fields state
-  const [editTitle, setEditTitle] = useState(submission?.details.title || '');
-  const [editCompanyName, setEditCompanyName] = useState(submission?.company.companyName || '');
-  const [editIndustryCategory, setEditIndustryCategory] = useState(submission?.company.industryName || '');
-  const [editIndustrySector, setEditIndustrySector] = useState(submission?.company.industrySector || '');
-  const [editDescription, setEditDescription] = useState(submission?.details.description || '');
-  const [editBusinessChallenge, setEditBusinessChallenge] = useState(submission?.details.businessChallenge || '');
-  const [editExistingProcess, setEditExistingProcess] = useState(submission?.details.existingProcess || '');
-  const [editExpectedOutcome, setEditExpectedOutcome] = useState(submission?.details.expectedOutcome || '');
-  const [editProjectObjectives, setEditProjectObjectives] = useState(submission?.details.projectObjectives || '');
-  const [editTechnologies, setEditTechnologies] = useState(submission?.technical.requiredTechnologies.join(', ') || '');
-  const [editSkills, setEditSkills] = useState(submission?.technical.requiredSkills.join(', ') || '');
-  const [editBranches, setEditBranches] = useState(submission?.technical.preferredBranches.join(', ') || '');
-  const [editDuration, setEditDuration] = useState(submission?.technical.expectedDuration || '');
+  const [editTitle, setEditTitle] = useState('');
+  const [editCompanyName, setEditCompanyName] = useState('');
+  const [editIndustryCategory, setEditIndustryCategory] = useState('');
+  const [editIndustrySector, setEditIndustrySector] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [editBusinessChallenge, setEditBusinessChallenge] = useState('');
+  const [editExistingProcess, setEditExistingProcess] = useState('');
+  const [editExpectedOutcome, setEditExpectedOutcome] = useState('');
+  const [editProjectObjectives, setEditProjectObjectives] = useState('');
+  const [editTechnologies, setEditTechnologies] = useState('');
+  const [editSkills, setEditSkills] = useState('');
+  const [editBranches, setEditBranches] = useState('');
+  const [editDuration, setEditDuration] = useState('');
 
-  if (!submission) {
+  // Fetch challenge by ID on mount
+  useEffect(() => {
+    if (!id) return;
+    let active = true;
+    (async () => {
+      try {
+        setIsLoading(true);
+        const data = await fetchChallengeById(id);
+        if (active) {
+          setSubmission(data);
+          setError(null);
+        }
+      } catch (err: any) {
+        if (active) {
+          setError(err.message || 'Failed to load challenge details');
+        }
+      } finally {
+        if (active) {
+          setIsLoading(false);
+        }
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [id]);
+
+  // Sync form states with loaded submission
+  useEffect(() => {
+    if (submission) {
+      setRemarks(submission.reviewRemarks || '');
+      setEditTitle(submission.details.title || '');
+      setEditCompanyName(submission.company.companyName || '');
+      setEditIndustryCategory(submission.company.industryName || '');
+      setEditIndustrySector(submission.company.industrySector || '');
+      setEditDescription(submission.details.description || '');
+      setEditBusinessChallenge(submission.details.businessChallenge || '');
+      setEditExistingProcess(submission.details.existingProcess || '');
+      setEditExpectedOutcome(submission.details.expectedOutcome || '');
+      setEditProjectObjectives(submission.details.projectObjectives || '');
+      setEditTechnologies(submission.technical.requiredTechnologies.join(', ') || '');
+      setEditSkills(submission.technical.requiredSkills.join(', ') || '');
+      setEditBranches(submission.technical.preferredBranches.join(', ') || '');
+      setEditDuration(submission.technical.expectedDuration || '');
+    }
+  }, [submission]);
+
+  if (isLoading) {
+    return (
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8 animate-pulse">
+        <div className="h-10 bg-slate-200 rounded-xl w-1/3"></div>
+        <div className="h-20 bg-slate-200 rounded-3xl"></div>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          <div className="lg:col-span-8 space-y-8">
+            <div className="h-48 bg-slate-200 rounded-3xl animate-pulse"></div>
+            <div className="h-64 bg-slate-200 rounded-3xl animate-pulse"></div>
+          </div>
+          <div className="lg:col-span-4 h-96 bg-slate-200 rounded-3xl animate-pulse"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !submission) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-16 text-center space-y-4">
         <AlertTriangle className="h-12 w-12 text-red-500 mx-auto" />
         <h2 className="text-xl font-bold text-[#0b2545] font-display">Submission Not Found</h2>
-        <p className="text-sm text-slate-500">The requested problem statement reference ID does not exist or has been removed.</p>
-        <Link to="/admin/dashboard" className="inline-flex items-center gap-1.5 text-xs font-bold text-[#0b2545] bg-[#eef4f8] px-4 py-2 rounded-xl border border-blue-100">
+        <p className="text-sm text-slate-500">{error || "The requested problem statement reference ID does not exist or has been removed."}</p>
+        <Link to={backLink} className="inline-flex items-center gap-1.5 text-xs font-bold text-[#0b2545] bg-[#eef4f8] px-4 py-2 rounded-xl border border-blue-100">
           <ArrowLeft className="h-4 w-4" /> Back to Dashboard
         </Link>
       </div>
@@ -159,8 +231,8 @@ export const SubmissionDetails: React.FC = () => {
       {/* Title block with back button */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-200 pb-6">
         <div className="space-y-1 flex-1">
-          <Link to="/admin/dashboard" className="inline-flex items-center gap-1 text-xs font-semibold text-slate-500 hover:text-[#0b2545] transition-colors mb-2">
-            <ArrowLeft className="h-3.5 w-3.5" /> Back to Admin Command Ledger
+          <Link to={backLink} className="inline-flex items-center gap-1 text-xs font-semibold text-slate-500 hover:text-[#0b2545] transition-colors mb-2">
+            <ArrowLeft className="h-3.5 w-3.5" /> {backLinkText}
           </Link>
           <div className="flex items-center gap-3 flex-wrap">
             <span className="font-mono text-xs font-black text-slate-400 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded">
@@ -323,28 +395,54 @@ export const SubmissionDetails: React.FC = () => {
 
               {/* Mock Attachment download panel */}
               {submission.additional.fileAttachmentName ? (
-                <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-100 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2.5 bg-emerald-100 rounded-xl text-emerald-700">
-                      <FileText className="h-5 w-5" />
+                <div className="space-y-4">
+                  <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-100 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2.5 bg-emerald-100 rounded-xl text-emerald-700">
+                        <FileText className="h-5 w-5" />
+                      </div>
+                      <div className="leading-tight min-w-0">
+                        <p className="font-bold text-slate-800 text-xs truncate max-w-[200px] sm:max-w-xs">{submission.additional.fileAttachmentName.split('/').pop()}</p>
+                        <p className="text-[10px] text-emerald-600 font-bold">PDF Attachment Verified</p>
+                      </div>
                     </div>
-                    <div className="leading-tight">
-                      <p className="font-bold text-slate-800 text-xs truncate max-w-xs">{submission.additional.fileAttachmentName}</p>
-                      <p className="text-[10px] text-emerald-600 font-bold">PDF Attachment Verified</p>
-                    </div>
+                    <button
+                      onClick={() => {
+                        if (submission.additional.fileAttachmentName.startsWith('http') || submission.additional.fileAttachmentName.startsWith('/')) {
+                          window.open(submission.additional.fileAttachmentName, '_blank');
+                        } else {
+                          alert(`Initiating mock download: ${submission.additional.fileAttachmentName}`);
+                        }
+                      }}
+                      className="flex items-center gap-1 bg-white border border-slate-200 text-[#0b2545] hover:border-[#0b2545] px-3.5 py-1.5 rounded-lg text-xs font-black shadow-sm transition-colors cursor-pointer shrink-0"
+                    >
+                      <Download className="h-3.5 w-3.5" /> Download
+                    </button>
                   </div>
-                  <button
-                    onClick={() => {
-                      if (submission.additional.fileAttachmentName.startsWith('http') || submission.additional.fileAttachmentName.startsWith('/')) {
-                        window.open(submission.additional.fileAttachmentName, '_blank');
-                      } else {
-                        alert(`Initiating mock download: ${submission.additional.fileAttachmentName}`);
-                      }
-                    }}
-                    className="flex items-center gap-1 bg-white border border-slate-200 text-[#0b2545] hover:border-[#0b2545] px-3.5 py-1.5 rounded-lg text-xs font-black shadow-sm transition-colors cursor-pointer"
-                  >
-                    <Download className="h-3.5 w-3.5" /> Download
-                  </button>
+                  
+                  {/* Premium PDF preview iframe */}
+                  {(submission.additional.fileAttachmentName.toLowerCase().endsWith('.pdf') || 
+                    submission.additional.fileAttachmentName.includes('/raw/upload') ||
+                    submission.additional.fileAttachmentName.includes('res.cloudinary.com')) && (
+                    <div className="border border-slate-200 rounded-2xl overflow-hidden bg-slate-50 shadow-inner">
+                      <div className="bg-slate-100 px-4 py-2 border-b border-slate-200 flex justify-between items-center text-xs font-bold text-slate-700">
+                        <span>Document Preview</span>
+                        <a 
+                          href={submission.additional.fileAttachmentName} 
+                          target="_blank" 
+                          rel="noreferrer" 
+                          className="text-[#8f6d3b] hover:underline"
+                        >
+                          Open in new tab
+                        </a>
+                      </div>
+                      <iframe
+                        src={submission.additional.fileAttachmentName}
+                        className="w-full h-[450px] border-0"
+                        title="PDF Preview"
+                      />
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/60 text-xs text-slate-500 font-semibold italic text-center">
@@ -361,85 +459,151 @@ export const SubmissionDetails: React.FC = () => {
 
         </div>
 
-        {/* Right Column (Review remarks input and Decision buttons) */}
+        {/* Right Column (Review remarks input / Filing Timeline) */}
         <div className="lg:col-span-4 space-y-6">
-          
-          <div className="bg-white rounded-2xl border border-slate-200/80 shadow-none p-6 space-y-5 sticky top-24">
-            <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 pb-3 flex items-center gap-1.5">
-              <MessageSquare className="h-4 w-4 text-[#8f6d3b]" /> Administrative Actions
-            </h3>
-            
-            <div className="space-y-4">
+          {currentUser?.role === 'admin' ? (
+            <div className="bg-white rounded-2xl border border-slate-200/80 shadow-none p-6 space-y-5 sticky top-24">
+              <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 pb-3 flex items-center gap-1.5">
+                <MessageSquare className="h-4 w-4 text-[#8f6d3b]" /> Administrative Actions
+              </h3>
               
-              <div className="space-y-1.5">
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide">
-                  Review remarks &amp; Instructions
-                </label>
-                <textarea
-                  rows={5}
-                  value={remarks}
-                  onChange={(e) => setRemarks(e.target.value)}
-                  placeholder="Enter comments detailing why this statement is being approved, or reasons and workarounds in case of rejection/return for revisions."
-                  className="block w-full p-3.5 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-[#0b2545] bg-slate-50/50 resize-y leading-relaxed"
-                ></textarea>
-                <p className="text-[10px] text-slate-400 leading-normal">
-                  These remarks will be displayed instantly on the Industry partner&apos;s workspace.
-                </p>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="space-y-2.5 pt-2">
-                <button
-                  onClick={handleApprove}
-                  disabled={isSubmitting || isEditing}
-                  className="w-full flex justify-center items-center py-3.5 px-4 rounded-xl text-xs font-black uppercase tracking-wider text-white bg-emerald-700/90 hover:bg-emerald-700 transition-all shadow-sm cursor-pointer disabled:opacity-50"
-                >
-                  Approve Statement
-                </button>
-
-                <button
-                  onClick={handleReject}
-                  disabled={isSubmitting || isEditing}
-                  className="w-full flex justify-center items-center py-3.5 px-4 rounded-xl text-xs font-black uppercase tracking-wider text-white bg-red-700/90 hover:bg-red-700 transition-all shadow-sm cursor-pointer disabled:opacity-50"
-                >
-                  Reject &amp; Require Reason
-                </button>
-
-                <div className="pt-2 border-t border-slate-100">
-                  {!isEditing ? (
-                    <button
-                      onClick={() => setIsEditing(true)}
-                      className="w-full flex justify-center items-center gap-1.5 py-3 px-4 rounded-xl text-xs font-black uppercase tracking-wider text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 transition-all shadow-sm cursor-pointer"
-                    >
-                      <Edit className="h-3.5 w-3.5 text-[#8f6d3b]" /> Edit Fields
-                    </button>
-                  ) : (
-                    <div className="grid grid-cols-2 gap-2">
-                      <button
-                        onClick={handleSave}
-                        className="flex justify-center items-center gap-1 py-3 px-3 rounded-xl text-xs font-black uppercase tracking-wider text-white bg-[#0b2545] hover:bg-[#134074] transition-all shadow-sm cursor-pointer"
-                      >
-                        <Save className="h-3.5 w-3.5" /> Save
-                      </button>
-                      <button
-                        onClick={handleCancel}
-                        className="flex justify-center items-center gap-1 py-3 px-3 rounded-xl text-xs font-black uppercase tracking-wider text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-all shadow-sm cursor-pointer"
-                      >
-                        <X className="h-3.5 w-3.5" /> Cancel
-                      </button>
-                    </div>
-                  )}
+              <div className="space-y-4">
+                
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide">
+                    Review remarks &amp; Instructions
+                  </label>
+                  <textarea
+                    rows={5}
+                    value={remarks}
+                    onChange={(e) => setRemarks(e.target.value)}
+                    placeholder="Enter comments detailing why this statement is being approved, or reasons and workarounds in case of rejection/return for revisions."
+                    className="block w-full p-3.5 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-[#0b2545] bg-slate-50/50 resize-y leading-relaxed"
+                  ></textarea>
+                  <p className="text-[10px] text-slate-400 leading-normal">
+                    These remarks will be displayed instantly on the Industry partner&apos;s workspace.
+                  </p>
                 </div>
-              </div>
 
-              <div className="border-t border-slate-100 pt-4 flex items-center justify-between text-xs text-slate-400">
-                <span className="font-semibold">Review Status:</span>
-                <span className="font-bold text-slate-700 font-mono">{submission.status}</span>
-              </div>
+                {/* Action Buttons */}
+                <div className="space-y-2.5 pt-2">
+                  <button
+                    onClick={handleApprove}
+                    disabled={isSubmitting || isEditing}
+                    className="w-full flex justify-center items-center py-3.5 px-4 rounded-xl text-xs font-black uppercase tracking-wider text-white bg-emerald-700/90 hover:bg-emerald-700 transition-all shadow-sm cursor-pointer disabled:opacity-50"
+                  >
+                    Approve Statement
+                  </button>
 
+                  <button
+                    onClick={handleReject}
+                    disabled={isSubmitting || isEditing}
+                    className="w-full flex justify-center items-center py-3.5 px-4 rounded-xl text-xs font-black uppercase tracking-wider text-white bg-red-700/90 hover:bg-red-700 transition-all shadow-sm cursor-pointer disabled:opacity-50"
+                  >
+                    Reject &amp; Require Reason
+                  </button>
+
+                  <div className="pt-2 border-t border-slate-100">
+                    {!isEditing ? (
+                      <button
+                        onClick={() => setIsEditing(true)}
+                        className="w-full flex justify-center items-center gap-1.5 py-3 px-4 rounded-xl text-xs font-black uppercase tracking-wider text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 transition-all shadow-sm cursor-pointer"
+                      >
+                        <Edit className="h-3.5 w-3.5 text-[#8f6d3b]" /> Edit Fields
+                      </button>
+                    ) : (
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          onClick={handleSave}
+                          className="flex justify-center items-center gap-1 py-3 px-3 rounded-xl text-xs font-black uppercase tracking-wider text-white bg-[#0b2545] hover:bg-[#134074] transition-all shadow-sm cursor-pointer"
+                        >
+                          <Save className="h-3.5 w-3.5" /> Save
+                        </button>
+                        <button
+                          onClick={handleCancel}
+                          className="flex justify-center items-center gap-1 py-3 px-3 rounded-xl text-xs font-black uppercase tracking-wider text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-all shadow-sm cursor-pointer"
+                        >
+                          <X className="h-3.5 w-3.5" /> Cancel
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="border-t border-slate-100 pt-4 flex items-center justify-between text-xs text-slate-400">
+                  <span className="font-semibold">Review Status:</span>
+                  <span className="font-bold text-slate-700 font-mono">{submission.status}</span>
+                </div>
+
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="bg-white rounded-2xl border border-slate-200/80 shadow-none p-6 space-y-5 sticky top-24">
+              <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 pb-3 flex items-center gap-1.5">
+                <Settings className="h-4 w-4 text-[#8f6d3b]" /> Submission Status
+              </h3>
+              
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Filing Timeline</span>
+                  <div className="relative border-l-2 border-slate-100 pl-4 ml-2 space-y-5">
+                    {/* Event 1 */}
+                    <div className="relative">
+                      <span className="absolute -left-[21px] top-1 bg-emerald-500 text-white rounded-full p-0.5">
+                        <CheckCircle className="h-2.5 w-2.5" />
+                      </span>
+                      <p className="text-xs font-bold text-slate-800">Statement Submitted</p>
+                      <p className="text-[10px] text-slate-400">{new Date(submission.submittedDate).toLocaleDateString()}</p>
+                    </div>
 
+                    {/* Event 2 */}
+                    <div className="relative">
+                      <span className={`absolute -left-[21px] top-1 rounded-full p-0.5 ${
+                        submission.status === 'Pending' ? 'bg-amber-400 text-white animate-pulse' : 'bg-emerald-500 text-white'
+                      }`}>
+                        {submission.status === 'Pending' ? <Clock className="h-2.5 w-2.5" /> : <CheckCircle className="h-2.5 w-2.5" />}
+                      </span>
+                      <p className="text-xs font-bold text-slate-800">Filing Verification</p>
+                      <p className="text-[10px] text-slate-400">Processed automatically</p>
+                    </div>
+
+                    {/* Event 3 */}
+                    <div className="relative">
+                      <span className={`absolute -left-[21px] top-1 rounded-full p-0.5 ${
+                        submission.status === 'Pending' 
+                          ? 'bg-slate-200 text-slate-400' 
+                          : submission.status === 'Approved' 
+                          ? 'bg-emerald-500 text-white' 
+                          : 'bg-red-500 text-white'
+                      }`}>
+                        {submission.status === 'Pending' ? <Clock className="h-2.5 w-2.5" /> : <CheckCircle className="h-2.5 w-2.5" />}
+                      </span>
+                      <p className="text-xs font-bold text-slate-800">
+                        {submission.status === 'Pending' 
+                          ? 'CII Admin Review' 
+                          : submission.status === 'Approved' 
+                          ? 'Approved' 
+                          : 'Returned for Revisions'
+                        }
+                      </p>
+                      <p className="text-[10px] text-slate-400">
+                        {submission.status === 'Pending' ? 'Awaiting administrative approval' : 'Review completed'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {submission.reviewRemarks && (
+                  <div className="pt-3 border-t border-slate-100 space-y-1">
+                    <span className="text-[10px] font-black text-[#002147] uppercase tracking-wider block">CII Admin Remarks</span>
+                    <p className="text-xs text-slate-600 italic font-medium leading-relaxed bg-amber-50/50 p-2.5 rounded-xl border border-amber-100/50">
+                      &quot;{submission.reviewRemarks}&quot;
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
       </div>

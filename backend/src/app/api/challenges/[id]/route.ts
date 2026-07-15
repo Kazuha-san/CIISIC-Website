@@ -22,6 +22,12 @@ const CHALLENGE_INCLUDE = {
       industry: true,
       logoUrl: true,
       isCIIMember: true,
+      user: {
+        select: {
+          email: true,
+          name: true,
+        },
+      },
     },
   },
   _count: { select: { proposals: true } },
@@ -128,6 +134,24 @@ export async function PATCH(
               : challenge.publishedAt,
         }),
       },
+      include: {
+        industryProfile: {
+          select: {
+            id: true,
+            userId: true,
+            companyName: true,
+            industry: true,
+            logoUrl: true,
+            isCIIMember: true,
+            user: {
+              select: {
+                email: true,
+                name: true,
+              },
+            },
+          },
+        },
+      },
     });
 
     const { ipAddress, userAgent } = getRequestMeta(req);
@@ -148,7 +172,7 @@ export async function PATCH(
       userAgent,
     });
 
-    return ok(updated);
+    return ok(serializeChallenge(updated, session.user.role, session.user.id));
   } catch (err) {
     console.error("[PATCH /api/challenges/[id]]", err);
     return serverError();

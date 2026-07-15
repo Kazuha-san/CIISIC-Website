@@ -198,9 +198,32 @@ export const AdminDashboard: React.FC = () => {
             />
           </div>
 
-          {/* Sorting dropdown */}
+          {/* Sorting and Filter dropdowns */}
           <div className="flex flex-wrap gap-3 items-center">
             
+            <select
+              value={statusFilter}
+              onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}
+              className="px-3 py-2 border border-slate-200 rounded-lg text-xs bg-white text-slate-700 font-medium focus:outline-none focus:border-[#0b2545]"
+            >
+              <option value="All">All Statuses</option>
+              <option value="Pending">Pending</option>
+              <option value="Approved">Approved</option>
+              <option value="Rejected">Rejected</option>
+            </select>
+
+            <select
+              value={sectorFilter}
+              onChange={(e) => { setSectorFilter(e.target.value); setCurrentPage(1); }}
+              className="px-3 py-2 border border-slate-200 rounded-lg text-xs bg-white text-slate-700 font-medium focus:outline-none focus:border-[#0b2545]"
+            >
+              {uniqueSectors.map((sector) => (
+                <option key={sector} value={sector}>
+                  {sector === 'All' ? 'All Sectors' : sector}
+                </option>
+              ))}
+            </select>
+
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
@@ -288,7 +311,7 @@ export const AdminDashboard: React.FC = () => {
                       <td className="px-6 py-4 whitespace-nowrap text-right">
                         <div className="inline-flex items-center gap-1.5">
                           <Link
-                            to={`/admin/details/${sub.id}`}
+                            to={`/details/${sub.id}`}
                             className="p-1.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-600 hover:bg-[#0b2545] hover:text-white transition-all shadow-sm"
                             title="View Full Details"
                           >
@@ -346,7 +369,7 @@ export const AdminDashboard: React.FC = () => {
                     <span className="text-[10px] text-slate-400 font-mono">Filing Date: {new Date(sub.submittedDate).toLocaleDateString()}</span>
                     <div className="flex gap-2">
                       <Link
-                        to={`/admin/details/${sub.id}`}
+                        to={`/details/${sub.id}`}
                         className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-[#0b2545] flex items-center gap-1"
                       >
                         <Eye className="h-3 w-3" /> View Details

@@ -1,4 +1,4 @@
-import { auth } from "./lib/auth";
+import { verifyToken } from "./lib/auth";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
@@ -23,70 +23,14 @@ const AUTH_REQUIRED_PREFIXES = [
 
 const PUBLIC_API_PREFIXES = [
   "/api/health",
+  "/api/auth/login",
+  "/api/auth/logout",
   "/api/auth/register",
   "/api/auth/forgot-password",
   "/api/auth/reset-password",
-  "/api/auth/signin",
-  "/api/auth/signout",
-  "/api/auth/session",
-  "/api/auth/csrf",
-  "/api/auth/providers",
-  "/api/auth/callback",
-  "/api/auth/error",
 ];
 
-// NextAuth middleware check
-const authMiddleware = auth((req: NextRequest & { auth?: { user?: { role?: string } } | null }) => {
-  const { pathname } = req.nextUrl;
-
-  // Allow public API routes without authentication check
-  const isPublic = PUBLIC_API_PREFIXES.some((prefix) =>
-    pathname.startsWith(prefix)
-  );
-  if (isPublic) {
-    return NextResponse.next();
-  }
-
-  // Check if auth is required
-  let requiresAuth = AUTH_REQUIRED_PREFIXES.some((prefix) =>
-    pathname.startsWith(prefix)
-  );
-
-  // GET /api/challenges and GET /api/challenges/[id] are public
-  if (pathname.startsWith("/api/challenges") && req.method === "GET") {
-    requiresAuth = false;
-  }
-
-  if (requiresAuth) {
-    const session = req.auth;
-
-    if (!session?.user) {
-      return NextResponse.json(
-        { success: false, message: "Authentication required" },
-        { status: 401 }
-      );
-    }
-
-    // Role-based protection for specific route prefixes
-    for (const [route, roles] of Object.entries(PROTECTED_ROUTES)) {
-      if (pathname.startsWith(route)) {
-        const userRole = session.user.role;
-        if (!userRole || !roles.includes(userRole)) {
-          return NextResponse.json(
-            { success: false, message: "Insufficient permissions" },
-            { status: 403 }
-          );
-        }
-        break;
-      }
-    }
-  }
-
-  return NextResponse.next();
-});
-
-// Master middleware wrapper to handle CORS preflight and delegate session checks
-export default async function middleware(req: NextRequest, event: any) {
+export default async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   const origin = req.headers.get("origin") || "";
@@ -99,7 +43,7 @@ export default async function middleware(req: NextRequest, event: any) {
   const isAllowedOrigin = allowedOrigins.includes(origin);
   const activeOrigin = isAllowedOrigin ? origin : (process.env.FRONTEND_URL || "");
 
-  // 1. Handle CORS preflight OPTIONS requests early (prevents NextAuth interception)
+  // 1. Handle CORS preflight OPTIONS requests early
   if (req.method === "OPTIONS") {
     const headers = new Headers();
     headers.set("Access-Control-Allow-Origin", activeOrigin);
@@ -109,8 +53,8 @@ export default async function middleware(req: NextRequest, event: any) {
     return new NextResponse(null, { status: 204, headers });
   }
 
-  // 2. Response helper to set CORS headers (avoid duplicating if already set by NextAuth wrapper)
-  const withCors = (res: any) => {
+  // 2. Response helper to set CORS headers
+  const withCors = (res: NextResponse) => {
     if (res && res.headers && res.headers.has("Access-Control-Allow-Origin")) {
       return res;
     }
@@ -121,13 +65,70 @@ export default async function middleware(req: NextRequest, event: any) {
     return res;
   };
 
-  // 3. Execute NextAuth session parser and route protection
-  const response = await authMiddleware(req, event);
-  
-  if (response) {
-    return withCors(response);
+  // Allow public API routes early
+  const isPublic = PUBLIC_API_PREFIXES.some((prefix) =>
+    pathname.startsWith(prefix)
+  );
+
+  // GET /api/challenges and GET /api/challenges/[id] are public
+  let requiresAuth = AUTH_REQUIRED_PREFIXES.some((prefix) =>
+    pathname.startsWith(prefix)
+  );
+  if (pathname.startsWith("/api/challenges") && req.method === "GET") {
+    requiresAuth = false;
   }
-  return response;
+
+  if (isPublic) {
+    return withCors(NextResponse.next());
+  }
+
+  if (requiresAuth) {
+    const authHeader = req.headers.get("authorization");
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return withCors(NextResponse.json(
+        { success: false, message: "Authentication required" },
+        { status: 401 }
+      ));
+    }
+
+    const token = authHeader.substring(7);
+    const payload = await verifyToken(token);
+
+    if (!payload) {
+      return withCors(NextResponse.json(
+        { success: false, message: "Invalid or expired token" },
+        { status: 401 }
+      ));
+    }
+
+    // Role-based protection for specific route prefixes
+    for (const [route, roles] of Object.entries(PROTECTED_ROUTES)) {
+      if (pathname.startsWith(route)) {
+        const userRole = payload.role;
+        if (!userRole || !roles.includes(userRole)) {
+          return withCors(NextResponse.json(
+            { success: false, message: "Insufficient permissions" },
+            { status: 403 }
+          ));
+        }
+        break;
+      }
+    }
+
+    // Attach user payload as request headers for route handlers
+    const requestHeaders = new Headers(req.headers);
+    requestHeaders.set("x-user-id", payload.id);
+    requestHeaders.set("x-user-role", payload.role);
+    requestHeaders.set("x-user-email", payload.email);
+
+    return withCors(NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      }
+    }));
+  }
+
+  return withCors(NextResponse.next());
 }
 
 export const config = {

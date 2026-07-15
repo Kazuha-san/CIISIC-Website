@@ -41,6 +41,8 @@ const formSchema = z.object({
 
   // Step 4: Additional Details
   expectedDeliverables: z.string().min(10, 'Expected deliverables are required'),
+  budget: z.string().min(1, 'Budget / Funding Offered is required'),
+  deadline: z.string().min(1, 'Expected Solution Deadline is required'),
   additionalNotes: z.string().optional(),
   declarationAccepted: z.boolean().refine(val => val === true, 'You must accept the declaration to submit')
 });
@@ -77,6 +79,8 @@ export const SubmitProblem: React.FC = () => {
       website: 'https://www.tatamotors.com',
       industrySector: 'Automotive',
       difficultyLevel: 'Medium',
+      budget: '',
+      deadline: '',
       declarationAccepted: false
     }
   });
@@ -123,6 +127,16 @@ export const SubmitProblem: React.FC = () => {
     }
   };
 
+  // Format YYYY-MM-DD date to DD/MM/YYYY
+  const formatToDDMMYYYY = (dateStr: string) => {
+    if (!dateStr) return '';
+    const parts = dateStr.split('-');
+    if (parts.length === 3) {
+      return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    }
+    return dateStr;
+  };
+
   // Final submission processing
   const onFormSubmit = async (data: FormFields) => {
     setIsSubmitting(true);
@@ -134,6 +148,8 @@ export const SubmitProblem: React.FC = () => {
         const uploadRes = await uploadFile(uploadedFile, 'DOCUMENT');
         attachmentUrl = uploadRes.url;
       }
+
+      const formattedNotes = `Budget allocated: ${data.budget}. Target date: ${formatToDDMMYYYY(data.deadline)}${data.additionalNotes ? `. ${data.additionalNotes}` : ''}`;
 
       // Assemble data matching the state structure and await backend creation
       await addSubmission({
@@ -165,7 +181,7 @@ export const SubmitProblem: React.FC = () => {
         },
         additional: {
           expectedDeliverables: data.expectedDeliverables,
-          additionalNotes: data.additionalNotes || '',
+          additionalNotes: formattedNotes,
           fileAttachmentName: attachmentUrl,
           declarationAccepted: data.declarationAccepted
         }
@@ -578,6 +594,31 @@ export const SubmitProblem: React.FC = () => {
                   {errors.expectedDeliverables && <p className="text-xs text-red-600 mt-1">{errors.expectedDeliverables.message}</p>}
                 </div>
 
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  {/* Budget */}
+                  <div className="space-y-1">
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide">Budget / Funding Offered <span className="text-red-500">*</span></label>
+                    <input
+                      type="text"
+                      {...register('budget')}
+                      placeholder="e.g. Rs 5,00,000"
+                      className="block w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#0b2545] bg-slate-50/50 font-medium"
+                    />
+                    {errors.budget && <p className="text-xs text-red-600 mt-1">{errors.budget.message}</p>}
+                  </div>
+
+                  {/* Deadline */}
+                  <div className="space-y-1">
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide">Expected Solution Deadline <span className="text-red-500">*</span></label>
+                    <input
+                      type="date"
+                      {...register('deadline')}
+                      className="block w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#0b2545] bg-slate-50/50 font-medium cursor-pointer"
+                    />
+                    {errors.deadline && <p className="text-xs text-red-600 mt-1">{errors.deadline.message}</p>}
+                  </div>
+                </div>
+
                 <div className="space-y-1">
                   <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide">Additional Notes (Optional)</label>
                   <textarea
@@ -618,7 +659,7 @@ export const SubmitProblem: React.FC = () => {
                           <Check className="h-6 w-6 font-bold" />
                         </div>
                         <p className="text-sm font-bold text-slate-800">{uploadedFile.name}</p>
-                        <p className="text-xs text-slate-400 font-mono">({(uploadedFile.size / 1024).toFixed(1)} KB)</p>
+                        <p className="text-xs text-slate-400 font-mono">({uploadedFile.size < 1024 * 1024 ? `${(uploadedFile.size / 1024).toFixed(1)} KB` : `${(uploadedFile.size / (1024 * 1024)).toFixed(2)} MB`})</p>
                         <button
                           type="button"
                           onClick={removeFile}
