@@ -121,6 +121,15 @@ export default async function middleware(req: NextRequest, event: any) {
     return res;
   };
 
+  // Skip NextAuth middleware execution for core auth endpoints to prevent double-execution and MissingCSRF errors
+  const isCoreAuth = pathname.startsWith("/api/auth") && 
+                     pathname !== "/api/auth/me" && 
+                     pathname !== "/api/auth/change-password";
+
+  if (isCoreAuth) {
+    return withCors(NextResponse.next());
+  }
+
   // 3. Execute NextAuth session parser and route protection
   const response = await authMiddleware(req, event);
   
