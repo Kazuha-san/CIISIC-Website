@@ -8,7 +8,7 @@ import { NextRequest } from "next/server";
 import { prisma } from "../src/lib/prisma";
 import { auth } from "../src/lib/auth";
 
-// Mock next-auth
+// Mock custom auth
 vi.mock("../src/lib/auth", () => ({
   auth: vi.fn(),
 }));

@@ -5,9 +5,30 @@ import { ProblemStatement, User, SubmissionStatus } from '../types';
  */
 const API_BASE = import.meta.env.VITE_API_URL || '';
 
-/** Helper to include credentials for NextAuth cookies */
+// Local memory store for JWT (initialized from localStorage)
+let authToken = localStorage.getItem('ciisic_jwt_token');
+
+export function setAuthToken(token: string | null) {
+  authToken = token;
+  if (token) {
+    localStorage.setItem('ciisic_jwt_token', token);
+  } else {
+    localStorage.removeItem('ciisic_jwt_token');
+  }
+}
+
+/** Helper to fetch JSON automatically injecting Authorization Bearer header */
 async function fetchJSON<T>(input: RequestInfo, init?: RequestInit): Promise<T> {
-  const response = await fetch(input, { credentials: 'include', ...init });
+  const headers = new Headers(init?.headers);
+  if (authToken) {
+    headers.set("Authorization", `Bearer ${authToken}`);
+  }
+  
+  const response = await fetch(input, {
+    ...init,
+    headers,
+  });
+  
   const data = await response.json();
   if (!data.success) {
     throw new Error(data.message || 'API error');
@@ -17,72 +38,49 @@ async function fetchJSON<T>(input: RequestInfo, init?: RequestInit): Promise<T> 
 
 /** Auth */
 export async function login(email: string, password: string) {
-  // 1. Fetch CSRF Token
-  const csrfRes = await fetch(`${API_BASE}/api/auth/csrf`, {
-    credentials: 'include',
-  });
-  const csrfData = await csrfRes.json();
-  const csrfToken = csrfData.csrfToken;
-
-  // 2. POST to the credentials callback.
-  //    By passing ?json=true, Auth.js behaves correctly.
-  //    Using redirect: 'manual' is crucial: it prevents the browser from following the 302 redirect
-  //    cross-origin, which would otherwise trigger a CORS violation on the backend root page.
-  //    The browser still processes the Set-Cookie headers from the 302 response correctly.
-  await fetch(`${API_BASE}/api/auth/callback/credentials?json=true`, {
+  const response = await fetch(`${API_BASE}/api/auth/login`, {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
+      'Content-Type': 'application/json',
     },
-    body: new URLSearchParams({ 
-      email, 
-      password, 
-      csrfToken,
-      callbackUrl: '/' 
-    }).toString(),
-    credentials: 'include',
-    redirect: 'manual',
+    body: JSON.stringify({ email, password }),
   });
 
-  // 3. Fetch the session.
-  const sessionRes = await fetch(`${API_BASE}/api/auth/session`, {
-    credentials: 'include',
-  });
-  const sessionData = await sessionRes.json();
-
-  if (!sessionData?.user) {
-    throw new Error('Invalid email or password.');
+  const data = await response.json();
+  if (!data.success) {
+    throw new Error(data.message || 'Invalid email or password.');
   }
 
-  return sessionData.user;
+  // Save the JWT token
+  setAuthToken(data.token);
+  return data.user;
 }
 
 export async function logout() {
-  // Fetch CSRF token for the state-changing signout POST request
-  const csrfRes = await fetch(`${API_BASE}/api/auth/csrf`, {
-    credentials: 'include',
-  });
-  const csrfData = await csrfRes.json();
-  const csrfToken = csrfData.csrfToken;
+  const headers = new Headers();
+  if (authToken) {
+    headers.set("Authorization", `Bearer ${authToken}`);
+  }
 
-  await fetch(`${API_BASE}/api/auth/signout?json=true`, { 
-    method: 'POST', 
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
-    body: new URLSearchParams({ 
-      csrfToken,
-      callbackUrl: '/' 
-    }).toString(),
-    credentials: 'include',
-    redirect: 'manual'
-  });
+  try {
+    await fetch(`${API_BASE}/api/auth/logout`, {
+      method: 'POST',
+      headers,
+    });
+  } catch (e) {
+    console.error("Logout request error:", e);
+  } finally {
+    // Always clear the token locally
+    setAuthToken(null);
+  }
 }
 
 export async function getSession(): Promise<User | null> {
   try {
     return await fetchJSON<User>(`${API_BASE}/api/auth/me`);
   } catch {
+    // If token is invalid or expired, clear it
+    setAuthToken(null);
     return null;
   }
 }

@@ -44,15 +44,33 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [submissions, setSubmissions] = useState<ProblemStatement[]>([]);
 
   // Load current user session
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [currentUser, setCurrentUser] = useState<User | null>(() => {
+    const saved = localStorage.getItem('ciisic_current_user');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  });
 
   // Fetch session and challenges on mount
   useEffect(() => {
     (async () => {
       const user = await getSession();
-      if (user) setCurrentUser(mapUserRole(user));
-      const challenges = await fetchChallenges();
-      setSubmissions(challenges);
+      if (user) {
+        setCurrentUser(mapUserRole(user));
+      } else {
+        setCurrentUser(null);
+      }
+      try {
+        const challenges = await fetchChallenges();
+        setSubmissions(challenges);
+      } catch (err) {
+        console.error("Failed to fetch challenges:", err);
+      }
     })();
   }, []);
 
