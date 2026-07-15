@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
 import { sanitizeHTML, stripHTML } from '../lib/html';
+import { uploadFile } from '../lib/api';
 
 export const IndustryDashboard: React.FC = () => {
   const { currentUser, submissions, addSubmission, showToast } = useApp();
@@ -273,9 +274,16 @@ export const IndustryDashboard: React.FC = () => {
   };
 
   // Final submit
-  const handleFinalSubmit = () => {
+  const handleFinalSubmit = async () => {
     try {
-      addSubmission({
+      let attachmentUrl: string | undefined = undefined;
+      if (attachedFile) {
+        showToast('Uploading document attachment...', 'info');
+        const uploadRes = await uploadFile(attachedFile, 'DOCUMENT');
+        attachmentUrl = uploadRes.url;
+      }
+
+      await addSubmission({
         company: {
           industryName: industryCategory,
           companyName: companyName,
@@ -305,7 +313,7 @@ export const IndustryDashboard: React.FC = () => {
         additional: {
           expectedDeliverables: 'Production code repository, mechanical schematics, and an integration deployment checklist.',
           additionalNotes: budget ? `Budget allocated: ${budget}. Target date: ${formatToDDMMYYYY(deadline)}` : '',
-          fileAttachmentName: attachedFile ? attachedFile.name : undefined,
+          fileAttachmentName: attachmentUrl,
           declarationAccepted: true
         }
       });
@@ -824,7 +832,7 @@ export const IndustryDashboard: React.FC = () => {
                             <div className="leading-tight">
                               <p className="text-sm font-bold text-slate-800">{attachedFile.name}</p>
                               <p className="text-xs text-slate-500 font-mono">
-                                ({(attachedFile.size / (1024 * 1024)).toFixed(2)} MB)
+                                ({attachedFile.size < 1024 * 1024 ? `${(attachedFile.size / 1024).toFixed(1)} KB` : `${(attachedFile.size / (1024 * 1024)).toFixed(2)} MB`})
                               </p>
                             </div>
                             <button
@@ -990,7 +998,7 @@ export const IndustryDashboard: React.FC = () => {
                             <FileCheck className="h-4 w-4 text-emerald-600" />
                             <span className="font-bold text-emerald-800 text-xs">{attachedFile.name}</span>
                           </div>
-                          <span className="font-mono text-[10px] text-emerald-600">({(attachedFile.size / (1024 * 1024)).toFixed(2)} MB)</span>
+                          <span className="font-mono text-[10px] text-emerald-600">({attachedFile.size < 1024 * 1024 ? `${(attachedFile.size / 1024).toFixed(1)} KB` : `${(attachedFile.size / (1024 * 1024)).toFixed(2)} MB`})</span>
                         </div>
                       ) : (
                         <span className="text-slate-500 font-medium mt-1 block italic">No files attached</span>

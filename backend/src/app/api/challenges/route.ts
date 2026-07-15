@@ -226,10 +226,28 @@ export async function POST(req: NextRequest) {
         tags: data.tags ?? [],
         attachmentUrls: data.attachmentUrls ?? [],
         industryProfileId: industryProfile.id,
-        status: data.status ?? "DRAFT",
+        status: data.status ?? "PENDING_APPROVAL",
         organizationName:
           data.organizationName ?? industryProfile.companyName,
         duration: data.duration ?? null,
+      },
+      include: {
+        industryProfile: {
+          select: {
+            id: true,
+            userId: true,
+            companyName: true,
+            industry: true,
+            logoUrl: true,
+            isCIIMember: true,
+            user: {
+              select: {
+                email: true,
+                name: true,
+              },
+            },
+          },
+        },
       },
     });
 
@@ -248,7 +266,9 @@ export async function POST(req: NextRequest) {
       userAgent,
     });
 
-    return created(challenge);
+    return created(
+      serializeChallenge(challenge, session.user.role, session.user.id)
+    );
   } catch (err) {
     console.error("[POST /api/challenges]", err);
     return serverError();

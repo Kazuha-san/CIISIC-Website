@@ -198,9 +198,32 @@ export const AdminDashboard: React.FC = () => {
             />
           </div>
 
-          {/* Sorting dropdown */}
+          {/* Sorting and Filter dropdowns */}
           <div className="flex flex-wrap gap-3 items-center">
             
+            <select
+              value={statusFilter}
+              onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}
+              className="px-3 py-2 border border-slate-200 rounded-lg text-xs bg-white text-slate-700 font-medium focus:outline-none focus:border-[#0b2545]"
+            >
+              <option value="All">All Statuses</option>
+              <option value="Pending">Pending</option>
+              <option value="Approved">Approved</option>
+              <option value="Rejected">Rejected</option>
+            </select>
+
+            <select
+              value={sectorFilter}
+              onChange={(e) => { setSectorFilter(e.target.value); setCurrentPage(1); }}
+              className="px-3 py-2 border border-slate-200 rounded-lg text-xs bg-white text-slate-700 font-medium focus:outline-none focus:border-[#0b2545]"
+            >
+              {uniqueSectors.map((sector) => (
+                <option key={sector} value={sector}>
+                  {sector === 'All' ? 'All Sectors' : sector}
+                </option>
+              ))}
+            </select>
+
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
