@@ -21,8 +21,43 @@ declare module "next-auth" {
   }
 }
 
+const useSecureCookies = process.env.NEXTAUTH_URL?.startsWith("https://") ?? false;
+const cookiePrefix = useSecureCookies ? "__Secure-" : "";
+const hostCookiePrefix = useSecureCookies ? "__Host-" : "";
+
+const cookiesConfig = {
+  sessionToken: {
+    name: `${cookiePrefix}authjs.session-token`,
+    options: {
+      httpOnly: true,
+      sameSite: useSecureCookies ? "none" as const : "lax" as const,
+      path: "/",
+      secure: useSecureCookies,
+    },
+  },
+  callbackUrl: {
+    name: `${cookiePrefix}authjs.callback-url`,
+    options: {
+      httpOnly: true,
+      sameSite: useSecureCookies ? "none" as const : "lax" as const,
+      path: "/",
+      secure: useSecureCookies,
+    },
+  },
+  csrfToken: {
+    name: `${hostCookiePrefix}authjs.csrf-token`,
+    options: {
+      httpOnly: true,
+      sameSite: useSecureCookies ? "none" as const : "lax" as const,
+      path: "/",
+      secure: useSecureCookies,
+    },
+  },
+};
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   trustHost: true,
+  cookies: cookiesConfig,
   session: {
     strategy: "jwt",
     maxAge: 30 * 24 * 60 * 60, // 30 days
