@@ -38,7 +38,7 @@ const handleCors = async (req: NextRequest, handler: any) => {
   } catch (e) {
     const newHeaders = new Headers();
     response.headers.forEach((val: string, k: string) => {
-      newHeaders.set(k, val);
+      newHeaders.append(k, val);
     });
     Object.entries(headers).forEach(([key, value]) => {
       newHeaders.set(key, value);
