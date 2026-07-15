@@ -25,22 +25,26 @@ export async function login(email: string, password: string) {
   const csrfToken = csrfData.csrfToken;
 
   // 2. POST to the credentials callback.
-  //    Auth.js always returns a 302 from this endpoint regardless of the body contents —
-  //    redirect:'false' is only honoured by the next-auth/react client helper, NOT the raw endpoint.
-  //    Using redirect:'manual' tells the browser NOT to follow the redirect, but the browser still
-  //    stores the Set-Cookie header from the 302 response, so the session cookie is set correctly.
-  await fetch(`${API_BASE}/api/auth/callback/credentials`, {
+  //    By passing ?json=true, Auth.js behaves correctly.
+  //    Using redirect: 'manual' is crucial: it prevents the browser from following the 302 redirect
+  //    cross-origin, which would otherwise trigger a CORS violation on the backend root page.
+  //    The browser still processes the Set-Cookie headers from the 302 response correctly.
+  await fetch(`${API_BASE}/api/auth/callback/credentials?json=true`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
     },
-    body: new URLSearchParams({ email, password, csrfToken }).toString(),
+    body: new URLSearchParams({ 
+      email, 
+      password, 
+      csrfToken,
+      callbackUrl: '/' 
+    }).toString(),
     credentials: 'include',
-    redirect: 'manual',  // opaqueredirect — cookie is stored, we don't follow
+    redirect: 'manual',
   });
 
-  // 3. The callback response is opaque (status 0, type 'opaqueredirect') — we can't read it.
-  //    Instead fetch the session; if the cookie was set correctly this will return the user.
+  // 3. Fetch the session.
   const sessionRes = await fetch(`${API_BASE}/api/auth/session`, {
     credentials: 'include',
   });
@@ -54,7 +58,25 @@ export async function login(email: string, password: string) {
 }
 
 export async function logout() {
-  await fetch(`${API_BASE}/api/auth/signout`, { method: 'POST', credentials: 'include' });
+  // Fetch CSRF token for the state-changing signout POST request
+  const csrfRes = await fetch(`${API_BASE}/api/auth/csrf`, {
+    credentials: 'include',
+  });
+  const csrfData = await csrfRes.json();
+  const csrfToken = csrfData.csrfToken;
+
+  await fetch(`${API_BASE}/api/auth/signout?json=true`, { 
+    method: 'POST', 
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: new URLSearchParams({ 
+      csrfToken,
+      callbackUrl: '/' 
+    }).toString(),
+    credentials: 'include',
+    redirect: 'manual'
+  });
 }
 
 export async function getSession(): Promise<User | null> {
