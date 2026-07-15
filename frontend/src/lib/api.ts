@@ -3,7 +3,7 @@ import { ProblemStatement, User, SubmissionStatus } from '../types';
 /**
  * Base URL comes from VITE_API_URL (e.g., http://localhost:3001)
  */
-const API_BASE = import.meta.env.VITE_API_URL;
+const API_BASE = import.meta.env.VITE_API_URL || '';
 
 /** Helper to include credentials for NextAuth cookies */
 async function fetchJSON<T>(input: RequestInfo, init?: RequestInit): Promise<T> {
