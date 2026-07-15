@@ -437,9 +437,9 @@ export const SubmissionDetails: React.FC = () => {
                         </a>
                       </div>
                       <iframe
-                        src={`${submission.additional.fileAttachmentName}#toolbar=0`}
+                        src={submission.additional.fileAttachmentName}
                         className="w-full h-[450px] border-0"
-                        title="Attachment Preview"
+                        title="PDF Preview"
                       />
                     </div>
                   )}
