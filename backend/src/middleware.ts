@@ -109,10 +109,11 @@ export default async function middleware(req: NextRequest, event: any) {
     return new NextResponse(null, { status: 204, headers });
   }
 
-  // 2. Response helper to set CORS headers (excluding auth routes to prevent duplication)
-  const isAuthRoute = pathname.startsWith("/api/auth");
+  // 2. Response helper to set CORS headers (avoid duplicating if already set by NextAuth wrapper)
   const withCors = (res: any) => {
-    if (isAuthRoute) return res;
+    if (res && res.headers && res.headers.has("Access-Control-Allow-Origin")) {
+      return res;
+    }
     res.headers.set("Access-Control-Allow-Origin", activeOrigin);
     res.headers.set("Access-Control-Allow-Credentials", "true");
     res.headers.set("Access-Control-Allow-Methods", "GET,OPTIONS,PATCH,DELETE,POST,PUT");
