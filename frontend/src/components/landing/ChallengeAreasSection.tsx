@@ -93,20 +93,18 @@ export const ChallengeAreasSection: React.FC = () => {
           </div>
         </div>
 
-        {/* Section 10: Events & Announcements Sub-Banner */}
-        <div className="bg-gradient-to-r from-blue-900 to-indigo-950 border border-blue-950 rounded-[32px] p-8 sm:p-10 relative overflow-hidden shadow-lg text-white">
-          {/* Ambient Glow */}
-          <div className="absolute top-0 right-0 w-80 h-80 rounded-full bg-blue-500/10 filter blur-[60px] pointer-events-none"></div>
-
+        {/* Section 10: Events & Announcements Sub-Banner - Refactored to a premium, human-designed light layout */}
+        <div className="bg-white border border-slate-200/80 rounded-2xl sm:rounded-[32px] p-6 sm:p-10 relative overflow-hidden shadow-sm text-slate-800">
+          
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 relative z-10">
             <div className="space-y-4 max-w-2xl text-left">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/20 border border-blue-500/35 text-blue-300 text-[10px] font-black uppercase tracking-wider">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-100 text-blue-600 text-[10px] font-black uppercase tracking-wider">
                 <Calendar className="h-3.5 w-3.5" /> Events Hub
               </div>
-              <h3 className="text-2xl font-extrabold font-display leading-snug">
+              <h3 className="text-2xl font-extrabold text-[#002147] font-display leading-snug">
                 Connecting the Innovation Ecosystem
               </h3>
-              <p className="text-sm text-slate-300 leading-relaxed">
+              <p className="text-sm text-slate-600 leading-relaxed font-semibold">
                 Stay updated with workshops, seminars, innovation challenges, industry interactions, startup showcases, and collaborative events organized under the CII Industry–Academia Excellence Initiative.
               </p>
             </div>
@@ -117,7 +115,7 @@ export const ChallengeAreasSection: React.FC = () => {
                   const el = document.getElementById('get-involved');
                   if (el) el.scrollIntoView({ behavior: 'smooth' });
                 }}
-                className="px-6 py-3.5 bg-white text-[#002147] hover:bg-slate-100 rounded-xl text-xs font-black uppercase tracking-wider shadow-md transition-all duration-150 whitespace-nowrap active:scale-98"
+                className="px-6 py-3.5 bg-[#002147] hover:bg-slate-900 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-sm transition-all duration-150 whitespace-nowrap active:scale-98"
               >
                 View All Events
               </button>
